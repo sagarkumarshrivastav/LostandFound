@@ -1,4 +1,5 @@
 
+
 export type ItemType = 'lost' | 'found';
 
 export interface Item {
@@ -11,4 +12,5 @@ export interface Item {
   date: Date; // Date lost or found
   lat?: number; // Optional latitude
   lng?: number; // Optional longitude
+  userId: string; // ID of the user who reported the item
 }

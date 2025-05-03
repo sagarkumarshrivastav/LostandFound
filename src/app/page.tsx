@@ -6,14 +6,14 @@ import { ItemList } from "@/components/item-list";
 import type { Item, ItemType } from "@/types/item";
 import { ItemForm, ItemFormValues } from '@/components/item-form';
 import { SearchFilterBar, SearchFilters } from '@/components/search-filter-bar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, MapPin } from 'lucide-react';
-import { getCurrentLocation } from '@/services/location'; // Assuming you have this service
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { PlusCircle } from 'lucide-react';
+import { getCurrentLocation } from '@/services/location';
 import type { Location } from '@/services/location';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Import Card components
-
+import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Correct import for Card components
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth hook
+import { useToast } from '@/hooks/use-toast'; // Import useToast hook
 
 // --- Mock Data ---
 const generateMockItems = (count: number): Item[] => {
@@ -33,6 +33,7 @@ const generateMockItems = (count: number): Item[] => {
     "Large black umbrella.",
     "Denim jacket, size medium."
   ];
+  const userIds = ["user-1", "user-2", "user-3", "user-4"]; // Mock user IDs
 
   for (let i = 0; i < count; i++) {
     const type = types[Math.floor(Math.random() * types.length)];
@@ -51,6 +52,7 @@ const generateMockItems = (count: number): Item[] => {
       date: date,
       lat: 34.0522 + latOffset, // Centered around LA
       lng: -118.2437 + lngOffset,
+      userId: userIds[Math.floor(Math.random() * userIds.length)], // Assign a mock user ID
     });
   }
   return items;
@@ -79,6 +81,8 @@ export default function Home() {
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [activeFilters, setActiveFilters] = useState<SearchFilters>({ keyword: '', proximity: 10 });
+  const { user, loading: authLoading } = useAuth(); // Get user and auth loading state
+  const { toast } = useToast(); // Get toast function
 
   // Load initial data (mock or API)
   useEffect(() => {
@@ -99,9 +103,10 @@ export default function Home() {
       setCurrentLocation(location);
       // Re-apply filters immediately after getting location if proximity filter is active
       applyFilters({ ...activeFilters, proximity: activeFilters.proximity ?? 10 }); // Use existing proximity or default
+      toast({ title: "Location Found", description: "Current location updated." });
     } catch (error) {
       console.error("Error getting location:", error);
-      // Handle error (e.g., show toast notification)
+      toast({ variant: "destructive", title: "Location Error", description: "Could not get your current location." });
     } finally {
       setIsSearchingLocation(false);
     }
@@ -155,6 +160,11 @@ export default function Home() {
 
   // Handle form submission
   const handleFormSubmit = async (values: ItemFormValues) => {
+     if (!user) {
+       toast({ variant: "destructive", title: "Authentication Required", description: "Please log in to report an item." });
+       return;
+     }
+
     setIsSubmitting(true);
     console.log("Submitting item:", values);
 
@@ -170,6 +180,7 @@ export default function Home() {
       imageUrl: values.image ? `https://picsum.photos/400/300?random=${Date.now()}` : undefined,
       location: values.location,
       date: values.date,
+      userId: user.uid, // Assign the logged-in user's ID
       // Add lat/lng if available from location input (future enhancement)
     };
 
@@ -181,43 +192,43 @@ export default function Home() {
 
     setIsSubmitting(false);
     setIsFormOpen(false); // Close the dialog on successful submission
-     // Optionally show a success toast
+    toast({ title: "Item Reported", description: "Your item has been successfully reported." });
   };
+
+  const openReportDialog = () => {
+      if (!user && !authLoading) {
+          toast({ variant: "destructive", title: "Login Required", description: "Please log in to report an item." });
+      } else if (!authLoading) {
+         setIsFormOpen(true);
+      }
+      // Do nothing if auth is still loading
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <header className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <h1 className="text-3xl font-bold text-primary">
-          FindIt Local
-        </h1>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-             <Button className="w-full md:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" /> Report Item
-              </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] md:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Report a Lost or Found Item</DialogTitle>
-              <DialogDescription>
-                Fill in the details below. Be as specific as possible.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-               <ItemForm onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
-            </div>
-             {/* <DialogFooter>
-               <DialogClose asChild>
-                 <Button type="button" variant="secondary">
-                   Cancel
-                 </Button>
-               </DialogClose>
-             </DialogFooter> */}
-          </DialogContent>
-        </Dialog>
-      </header>
+      <div className="mb-8 flex flex-col items-center justify-end gap-4 md:flex-row"> {/* Adjusted alignment */}
+         {/* Reporting button */}
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+               <Button onClick={openReportDialog} disabled={authLoading} className="w-full md:w-auto">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Report Item
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] md:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Report a Lost or Found Item</DialogTitle>
+                <DialogDescription>
+                  Fill in the details below. Be as specific as possible.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                 <ItemForm onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
+              </div>
+            </DialogContent>
+          </Dialog>
+      </div>
 
-      <main>
+
         <SearchFilterBar
           onSearch={applyFilters}
           isSearchingLocation={isSearchingLocation}
@@ -250,7 +261,6 @@ export default function Home() {
         ) : (
           <ItemList items={filteredItems} />
         )}
-      </main>
     </div>
   );
 }

@@ -1,0 +1,166 @@
+
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import type { Item } from '@/types/item';
+import { ItemList } from '@/components/item-list';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Import Card for Skeleton structure
+
+// --- Mock Data Fetching ---
+// Replace this with actual API calls later
+const fetchUserItems = async (userId: string): Promise<Item[]> => {
+  console.log(`Fetching items for user: ${userId}`);
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  // Filter mock data (replace with real fetch)
+   const generateMockItems = (count: number): Item[] => {
+      const items: Item[] = [];
+      const types: ItemType[] = ['lost', 'found'];
+      const titles = ["Keys", "Wallet", "Phone", "Backpack", "Laptop", "Book", "Glasses", "Watch", "Umbrella", "Jacket"];
+      const locations = ["Park", "Cafe", "Bus Stop", "Library", "Train Station", "Supermarket", "Office Building", "University Campus", "Restaurant", "Shopping Mall"];
+      const descriptions = [
+        "Found near the main entrance.",
+        "Lost on the number 12 bus.",
+        "Black leather wallet with ID.",
+        "iPhone 13, blue case.",
+        "Contains important documents.",
+        "Hardcover novel, slightly worn.",
+        "Prescription glasses, black frame.",
+        "Silver wristwatch, needs repair.",
+        "Large black umbrella.",
+        "Denim jacket, size medium."
+      ];
+      const userIds = ["user-1", "user-2", "user-3", "user-4", userId]; // Include current user ID for testing
+
+      for (let i = 0; i < count; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        const date = new Date();
+        date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+        const latOffset = (Math.random() - 0.5) * 0.1;
+        const lngOffset = (Math.random() - 0.5) * 0.1;
+
+        items.push({
+          id: `item-${i + 1}`,
+          type: type,
+          title: `${type === 'lost' ? 'Lost' : 'Found'}: ${titles[Math.floor(Math.random() * titles.length)]}`,
+          description: descriptions[Math.floor(Math.random() * descriptions.length)] + ` Item ID: ${i+1}`,
+          imageUrl: `https://picsum.photos/400/300?random=${i+1}`,
+          location: locations[Math.floor(Math.random() * locations.length)],
+          date: date,
+          lat: 34.0522 + latOffset,
+          lng: -118.2437 + lngOffset,
+          userId: userIds[Math.floor(Math.random() * userIds.length)],
+        });
+      }
+      return items;
+    };
+
+  const allMockItems = generateMockItems(30); // Generate some items
+  return allMockItems.filter(item => item.userId === userId);
+};
+// --- End Mock Data Fetching ---
+
+type ItemType = 'lost' | 'found'; // Re-define if not imported from types/item
+
+export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [userItems, setUserItems] = useState<Item[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
+
+  useEffect(() => {
+    // If auth is done loading and there's no user, redirect to home
+    if (!loading && !user) {
+      router.push('/');
+      return; // Stop further execution in this effect
+    }
+
+    // If user is available, fetch their items
+    if (user) {
+      setIsLoadingItems(true);
+      fetchUserItems(user.uid)
+        .then(items => {
+          setUserItems(items);
+        })
+        .catch(error => {
+          console.error("Error fetching user items:", error);
+          // Handle error display (e.g., show a toast)
+        })
+        .finally(() => {
+          setIsLoadingItems(false);
+        });
+    }
+  }, [user, loading, router]);
+
+  // Show loading state while checking auth or fetching items
+  if (loading || isLoadingItems) {
+    return (
+        <div className="container mx-auto p-4 md:p-6 lg:p-8">
+          <h1 className="text-3xl font-bold mb-6">My Dashboard</h1>
+           <div className="mb-4">
+              <Skeleton className="h-8 w-1/4" />
+           </div>
+           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="w-full">
+                 <CardHeader className='p-0'>
+                    <Skeleton className="h-48 w-full rounded-t-lg rounded-b-none" />
+                 </CardHeader>
+                 <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <div className="flex items-center space-x-2 pt-2">
+                        <Skeleton className="h-4 w-4 rounded-full" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <Skeleton className="h-4 w-4 rounded-full" />
+                        <Skeleton className="h-4 w-1/3" />
+                     </div>
+                 </CardContent>
+              </Card>
+            ))}
+           </div>
+        </div>
+      );
+  }
+
+  // Should not happen if redirection works, but as a fallback
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <h1 className="text-3xl font-bold mb-6">My Dashboard</h1>
+
+      <div className="mb-8 p-4 border rounded-lg bg-card shadow-sm">
+        <h2 className="text-xl font-semibold mb-2">Welcome, {user.displayName || user.email}!</h2>
+        <p className="text-muted-foreground">Here you can manage your reported items and messages.</p>
+        {/* Add profile edit button or link here later */}
+        {/* <Button variant="outline" size="sm" className="mt-4">Edit Profile</Button> */}
+      </div>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">My Reported Items</h2>
+        {userItems.length > 0 ? (
+          <ItemList items={userItems} />
+        ) : (
+          <p className="text-muted-foreground">You haven't reported any items yet.</p>
+        )}
+      </section>
+
+      {/* Add Messaging Section Later */}
+      {/* <section className="mt-12">
+        <h2 className="text-2xl font-semibold mb-4">My Messages</h2>
+        <p className="text-muted-foreground">Messaging feature coming soon!</p>
+      </section> */}
+    </div>
+  );
+}
