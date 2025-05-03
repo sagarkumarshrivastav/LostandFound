@@ -84,26 +84,27 @@ export function Header() {
 
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center space-x-2 group"> {/* Added group */}
-          <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" /> {/* Added transition */}
-          <span className="font-bold text-xl text-foreground">Lost & Found</span> {/* Updated Brand Name */}
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 shadow-sm">
+      <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
+        {/* Logo and Brand Name - Increased margin-right */}
+        <Link href="/" className="flex items-center space-x-2 group mr-6">
+          <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" />
+          <span className="font-bold text-xl text-foreground">Lost & Found</span>
         </Link>
 
-        <nav className="hidden items-center space-x-6 md:flex">
+        {/* Navigation Links - Adjusted spacing and added margin-right auto to push auth controls to the right */}
+        <nav className="hidden items-center space-x-6 md:flex mr-auto">
          <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Home</Link>
-         {/* Updated links to point to the Items page */}
          <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Lost Items</Link>
          <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Found Items</Link>
-          {/* Report Item - Open Items page dialog if possible, or a dedicated page */}
-          {/* This button now ideally opens the dialog on the Items page or navigates */}
-          <Button variant="ghost" size="sm" onClick={() => router.push('/items#report-item')} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary" disabled={loading}>
+          {/* Report Item button - adjusted style */}
+          <Button variant="ghost" size="sm" onClick={() => router.push('/items#report-item')} className="text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary px-3" disabled={loading}>
              Report Item
           </Button>
         </nav>
 
-        <div className="flex items-center space-x-3">
+        {/* Auth and Theme Controls - Added gap */}
+        <div className="flex items-center gap-3"> {/* Use gap instead of space-x for consistent spacing */}
             {/* Theme Toggle */}
             {mounted && (
             <Button
@@ -111,10 +112,8 @@ export function Header() {
                 size="icon"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label="Toggle theme"
-                // Explicitly set background to the current theme's background
-                // In light mode, this will be white (or the defined light background)
-                // In dark mode, this will be the dark background color
-                className="bg-background transition-transform transform hover:scale-110 duration-300 hover:bg-accent"
+                // Use background from theme, ensure smooth transition
+                className="bg-transparent transition-transform transform hover:scale-110 duration-300 hover:bg-accent rounded-full"
             >
                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-foreground" />
                 <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-foreground" />
@@ -123,7 +122,7 @@ export function Header() {
 
             {/* Auth Section */}
             {loading ? (
-                 <Button variant="ghost" size="sm" disabled className="text-muted-foreground flex items-center">
+                 <Button variant="ghost" size="sm" disabled className="text-muted-foreground flex items-center px-3">
                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                      Loading...
                  </Button>
@@ -167,10 +166,10 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2"> {/* Use gap here as well */}
              <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                    <Button variant="ghost" size="sm" className="text-sm font-medium text-foreground hover:text-primary transition-colors px-3">
                         Sign In
                      </Button>
                 </DialogTrigger>
@@ -187,7 +186,7 @@ export function Header() {
 
                <Dialog open={isSignupOpen} onOpenChange={setIsSignupOpen}>
                 <DialogTrigger asChild>
-                    <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" disabled={loading}>
+                    <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors px-4" disabled={loading}>
                          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Sign Up
                     </Button>
