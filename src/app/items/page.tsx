@@ -1,269 +1,191 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios'; // Use axios for API calls
 import { Button } from "@/components/ui/button";
 import { ItemList } from "@/components/item-list";
-import type { Item, ItemType } from "@/types/item";
-import { ItemForm, ItemFormValues } from '@/components/item-form'; // Keep for reporting dialog if needed here too
+import type { Item, PaginatedItemsResponse, ItemType } from "@/types/item"; // Updated Item type
+import { ItemForm, ItemFormValues } from '@/components/item-form';
 import { SearchFilterBar, SearchFilters } from '@/components/search-filter-bar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { PlusCircle, Loader2 } from 'lucide-react'; // Added Loader2
-import { getCurrentLocation } from '@/services/location';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { getCurrentLocation } from '@/services/location'; // Assuming this remains relevant
 import type { Location } from '@/services/location';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Correct import for Card components
-import { useAuth } from '@/hooks/use-auth'; // Import useAuth hook
-import { useToast } from '@/hooks/use-toast'; // Import useToast hook
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"; // Import Pagination
-import { cn } from '@/lib/utils'; // Import cn utility function
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { cn } from '@/lib/utils';
 
-// --- Mock Data (Keep or fetch from API) ---
-const generateMockItems = (count: number): Item[] => {
-  const items: Item[] = [];
-  const types: ItemType[] = ['lost', 'found'];
-  const titles = ["Keys", "Wallet", "Phone", "Backpack", "Laptop", "Book", "Glasses", "Watch", "Umbrella", "Jacket", "Ring", "Headphones", "Scarf", "Gloves", "ID Card"];
-  const locations = ["Park", "Cafe", "Bus Stop", "Library", "Train Station", "Supermarket", "Office Building", "University Campus", "Restaurant", "Shopping Mall", "Airport", "Gym", "Cinema", "Beach", "Museum"];
-  const descriptions = [
-    "Found near the main entrance, looks new.",
-    "Lost on the number 12 bus, green line.",
-    "Black leather wallet with several cards and some cash.",
-    "iPhone 14 Pro, deep purple, slight scratch on corner.",
-    "Dell XPS laptop in a grey sleeve, contains work files.",
-    "Hardcover copy of 'The Midnight Library'.",
-    "Ray-Ban prescription glasses, black frame.",
-    "Silver Seiko wristwatch, leather strap is worn.",
-    "Large collapsible black umbrella with wooden handle.",
-    "Blue North Face denim jacket, size medium.",
-    "Gold band ring, might be valuable.",
-    "Sony WH-1000XM4 headphones, black.",
-    "Woolen scarf, red and grey pattern.",
-    "Black leather gloves, seems like a pair.",
-    "University ID card for Jane Doe."
-  ];
-  const userIds = ["user-1", "user-2", "user-3", "user-4", "user-5", "user-6"]; // Mock user IDs
-
-  for (let i = 0; i < count; i++) {
-    const type = types[Math.floor(Math.random() * types.length)];
-    const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * 90)); // Within the last 90 days
-    const latOffset = (Math.random() - 0.5) * 0.2; // Slightly wider offset
-    const lngOffset = (Math.random() - 0.5) * 0.2; // Slightly wider offset
-
-    items.push({
-      id: `item-${i + 1}`,
-      type: type,
-      title: `${type === 'lost' ? 'Lost' : 'Found'}: ${titles[Math.floor(Math.random() * titles.length)]}`,
-      description: descriptions[Math.floor(Math.random() * descriptions.length)] + ` Item ID: ${i+1}`,
-      imageUrl: `https://picsum.photos/400/300?random=${i+1}`, // Placeholder image
-      location: locations[Math.floor(Math.random() * locations.length)],
-      date: date,
-      lat: 34.0522 + latOffset, // Centered around LA
-      lng: -118.2437 + lngOffset,
-      userId: userIds[Math.floor(Math.random() * userIds.length)], // Assign a mock user ID
-    });
-  }
-  return items;
-};
-// --- End Mock Data ---
-
-// --- Haversine formula ---
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Radius of the Earth in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in kilometers
-};
-
-const ITEMS_PER_PAGE = 12; // Adjust items per page if needed
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const ITEMS_PER_PAGE = 12;
 
 export default function ItemsPage() {
-  const [allItems, setAllItems] = useState<Item[]>([]);
-  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  // State for items and loading
+  const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Auth state
+  const { user, loading: authLoading, token } = useAuth();
+  const { toast } = useToast();
+
+  // Filters and Location State
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [activeFilters, setActiveFilters] = useState<SearchFilters>({ keyword: '', proximity: 10 });
-  const { user, loading: authLoading } = useAuth(); // Get user and auth loading state
-  const { toast } = useToast(); // Get toast function
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Load initial data
-  useEffect(() => {
-    setIsLoading(true);
-    // Simulate API call or fetch data
-    setTimeout(() => {
-      const mockItems = generateMockItems(50); // Generate items
-      setAllItems(mockItems);
-      setFilteredItems(mockItems); // Initially show all items
-      setTotalPages(Math.ceil(mockItems.length / ITEMS_PER_PAGE));
-      setIsLoading(false);
-    }, 1000); // Simulate network delay
-  }, []);
+  // Fetch items from backend API
+   const fetchItems = useCallback(async (filters: SearchFilters, page: number) => {
+     setIsLoading(true);
+     try {
+       const params = new URLSearchParams({
+         page: page.toString(),
+         limit: ITEMS_PER_PAGE.toString(),
+         sortBy: 'createdAt', // Default sort
+         order: 'desc',
+         ...(filters.keyword && { keyword: filters.keyword }),
+         ...(filters.type && { type: filters.type }),
+         ...(filters.location && { location: filters.location }), // Pass location filter if present
+         ...(filters.date && { date: filters.date.toISOString().split('T')[0] }), // Format date as YYYY-MM-DD
+          // Add proximity params if location is available
+         // ...(currentLocation && filters.proximity && {
+         //     lat: currentLocation.lat.toString(),
+         //     lng: currentLocation.lng.toString(),
+         //     proximity: filters.proximity.toString()
+         // })
+       });
 
-   // Update total pages whenever filtered items change
-   useEffect(() => {
-     const newTotalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-     setTotalPages(newTotalPages);
-     // Reset to first page if current page becomes invalid after filtering
-     if (currentPage > newTotalPages && newTotalPages > 0) {
+       const res = await axios.get<PaginatedItemsResponse>(`${API_URL}/items?${params.toString()}`);
+       setItems(res.data.items);
+       setTotalPages(res.data.totalPages);
+       setCurrentPage(res.data.currentPage); // Sync with backend's current page
+
+     } catch (error: any) {
+       console.error('Error fetching items:', error);
+       toast({ variant: 'destructive', title: 'Error Fetching Items', description: error.response?.data?.msg || 'Could not load items.' });
+       setItems([]); // Clear items on error
+       setTotalPages(1);
        setCurrentPage(1);
-     } else if (newTotalPages === 0) {
-        setCurrentPage(1); // Or 0 if you prefer for no items
+     } finally {
+       setIsLoading(false);
      }
-   }, [filteredItems, currentPage]);
+   }, [toast]); // Removed currentLocation dependency for now
+
+    // Initial fetch and refetch on filter/page change
+    useEffect(() => {
+        fetchItems(activeFilters, currentPage);
+    }, [activeFilters, currentPage, fetchItems]);
 
 
-  // Function to handle getting current location
-  const handleGetCurrentLocation = async () => {
-    setIsSearchingLocation(true);
-    try {
-      const location = await getCurrentLocation();
-      setCurrentLocation(location);
-      // Re-apply filters with the new location and default proximity
-      applyFilters({ ...activeFilters, proximity: activeFilters.proximity ?? 10 });
-      toast({ title: "Location Found", description: "Current location updated and filters applied." });
-    } catch (error) {
-      console.error("Error getting location:", error);
-      toast({ variant: "destructive", title: "Location Error", description: "Could not get your current location." });
-    } finally {
-      setIsSearchingLocation(false);
-    }
-  };
+   // --- Location Handling (Keep as is or adjust) ---
+   const handleGetCurrentLocation = async () => {
+     setIsSearchingLocation(true);
+     try {
+       const location = await getCurrentLocation();
+       setCurrentLocation(location);
+       // Re-apply filters with the new location and default proximity
+       // Note: Proximity filtering needs backend implementation
+       setActiveFilters(prev => ({ ...prev, proximity: prev.proximity ?? 10 })); // Trigger refetch
+       toast({ title: "Location Found", description: "Current location updated." });
+     } catch (error) {
+       console.error("Error getting location:", error);
+       toast({ variant: "destructive", title: "Location Error", description: "Could not get your current location." });
+     } finally {
+       setIsSearchingLocation(false);
+     }
+   };
 
-  // Function to apply filters
-  const applyFilters = (filters: SearchFilters) => {
-    setActiveFilters(filters);
-    setIsLoading(true); // Show loading state during filtering
-    setCurrentPage(1); // Reset to page 1 when filters change
+   // Function to apply filters and trigger refetch
+   const applyFilters = (filters: SearchFilters) => {
+     setActiveFilters(filters); // Update active filters state
+     setCurrentPage(1); // Reset to page 1 when filters change
+     // fetchItems will be called by the useEffect hook due to state change
+   };
 
-    // Simulate filtering delay for UX
-    setTimeout(() => {
-        let tempFiltered = [...allItems];
-
-        // Filter by keyword
-        if (filters.keyword) {
-          const lowerKeyword = filters.keyword.toLowerCase();
-          tempFiltered = tempFiltered.filter(item =>
-            item.title.toLowerCase().includes(lowerKeyword) ||
-            item.description.toLowerCase().includes(lowerKeyword) ||
-            item.location.toLowerCase().includes(lowerKeyword)
-          );
-        }
-
-        // Filter by date
-        if (filters.date) {
-            const filterDate = new Date(filters.date);
-            filterDate.setHours(0, 0, 0, 0); // Normalize filter date
-            tempFiltered = tempFiltered.filter(item => {
-                const itemDate = new Date(item.date);
-                itemDate.setHours(0, 0, 0, 0); // Normalize item date
-                return itemDate.getTime() === filterDate.getTime();
-            });
-        }
-
-        // Filter by proximity (only if location is available)
-        if (filters.proximity && currentLocation) {
-          tempFiltered = tempFiltered.filter(item => {
-            if (item.lat && item.lng) {
-              const distance = calculateDistance(currentLocation.lat, currentLocation.lng, item.lat, item.lng);
-              return distance <= filters.proximity!;
-            }
-            return false; // Exclude items without coords when proximity filter is active
-          });
-        } else if (filters.proximity && !currentLocation) {
-            // If proximity filter is set but location is not yet available, maybe show a message or handle appropriately
-             console.warn("Proximity filter applied without current location.");
-             // Optionally, you could prevent filtering or clear the proximity filter
-             // tempFiltered = []; // Or show no results if location is mandatory for proximity
-        }
-
-        setFilteredItems(tempFiltered);
-        setIsLoading(false); // Hide loading state after filtering
-    }, 500); // Simulate filtering delay
-  };
-
-
-  // Handle form submission
+  // Handle item form submission
   const handleFormSubmit = async (values: ItemFormValues) => {
-     if (!user) {
+     if (!user || !token) {
        toast({ variant: "destructive", title: "Authentication Required", description: "Please log in to report an item." });
        return;
      }
 
     setIsSubmitting(true);
-    console.log("Submitting item:", values);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Use FormData to handle potential file uploads
+    const formData = new FormData();
+    formData.append('type', values.type);
+    formData.append('title', values.title);
+    formData.append('description', values.description);
+    formData.append('location', values.location);
+    formData.append('dateLostOrFound', values.date.toISOString()); // Send ISO string date
+    if (values.image) {
+        formData.append('image', values.image); // Append the file object
+    }
+    // Append lat/lng if available
+    // if (currentLocation) {
+    //     formData.append('lat', currentLocation.lat.toString());
+    //     formData.append('lng', currentLocation.lng.toString());
+    // }
 
-    const newItem: Item = {
-      id: `item-${Date.now()}`,
-      type: values.type as ItemType,
-      title: values.title,
-      description: values.description,
-      imageUrl: values.image ? `https://picsum.photos/400/300?random=${Date.now()}` : undefined,
-      location: values.location,
-      date: values.date,
-      userId: user.uid,
-      // Use current location if available, otherwise undefined
-      lat: currentLocation?.lat,
-      lng: currentLocation?.lng,
-    };
+    try {
+      const config = {
+          headers: {
+              'Content-Type': 'multipart/form-data',
+              'x-auth-token': token, // Send JWT token
+          },
+      };
+      await axios.post(`${API_URL}/items`, formData, config);
 
-    // Add the new item to the beginning of the list
-    const updatedAllItems = [newItem, ...allItems];
-    setAllItems(updatedAllItems);
-    // Re-apply current filters to include the new item if it matches
-    applyFilters(activeFilters);
+      toast({ title: "Item Reported", description: "Your item has been successfully reported." });
+      setIsFormOpen(false); // Close dialog
+      fetchItems(activeFilters, 1); // Refetch items on page 1 to see the new one
+      setCurrentPage(1); // Ensure we are on page 1
 
-    setIsSubmitting(false);
-    setIsFormOpen(false); // Close dialog
-    toast({ title: "Item Reported", description: "Your item has been successfully reported." });
+    } catch (error: any) {
+      console.error("Error submitting item:", error);
+      toast({ variant: 'destructive', title: 'Submission Failed', description: error.response?.data?.msg || 'Could not report item.' });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   // Open report dialog, checking auth status
   const openReportDialog = () => {
       if (!user && !authLoading) {
           toast({ variant: "destructive", title: "Login Required", description: "Please log in to report an item." });
-      } else if (!authLoading) { // Only open if not loading and user exists or check passed
+          // Optionally redirect to login or open login modal
+      } else if (!authLoading) { // Only open if not loading and user exists
          setIsFormOpen(true);
       }
-      // Implicitly does nothing if authLoading is true
   }
-
-   // Calculate items for the current page
-   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-   const endIndex = startIndex + ITEMS_PER_PAGE;
-   const currentItems = filteredItems.slice(startIndex, endIndex);
 
    // Handle pagination change
    const handlePageChange = (newPage: number) => {
      if (newPage >= 1 && newPage <= totalPages) {
-       setCurrentPage(newPage);
+       setCurrentPage(newPage); // Update page state, useEffect will trigger refetch
        window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top
      }
    };
 
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8 min-h-screen"> {/* Ensure min height */}
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 min-h-screen">
         <h1 className="text-3xl font-bold mb-6 text-center md:text-left">Lost & Found Items</h1>
         <div className="mb-8 flex flex-col items-center justify-end gap-4 md:flex-row">
             {/* Reporting button */}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
+                     {/* Disable button while auth is loading */}
                     <Button onClick={openReportDialog} disabled={authLoading} className="w-full md:w-auto transition-colors">
+                         {/* Show loader if auth is loading */}
                         {authLoading ? (
                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
@@ -280,6 +202,7 @@ export default function ItemsPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
+                         {/* Pass onSubmit and isSubmitting state */}
                         <ItemForm onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
                     </div>
                 </DialogContent>
@@ -288,13 +211,14 @@ export default function ItemsPage() {
 
 
         <SearchFilterBar
-          onSearch={applyFilters}
+          onSearch={applyFilters} // Pass the applyFilters function
           isSearchingLocation={isSearchingLocation}
           onGetCurrentLocation={handleGetCurrentLocation}
         />
 
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+             {/* Skeleton Loader */}
             {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
               <Card key={i} className="w-full animate-pulse">
                 <CardHeader className='p-0'>
@@ -318,13 +242,15 @@ export default function ItemsPage() {
           </div>
         ) : (
            <>
-              {currentItems.length > 0 ? (
-                   <ItemList items={currentItems} />
+             {/* Item List */}
+              {items.length > 0 ? (
+                   <ItemList items={items} />
               ) : (
                   <p className="text-center text-muted-foreground mt-12">No items match your current filters.</p>
               )}
+             {/* Pagination */}
              {totalPages > 1 && (
-                 <div className="mt-12 flex justify-center"> {/* Increased margin top */}
+                 <div className="mt-12 flex justify-center">
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
@@ -339,6 +265,7 @@ export default function ItemsPage() {
                             )}
                           />
                         </PaginationItem>
+                         {/* Generate page links */}
                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                              <PaginationItem key={page}>
                              <PaginationLink
@@ -358,7 +285,7 @@ export default function ItemsPage() {
                             aria-disabled={currentPage >= totalPages}
                             tabIndex={currentPage >= totalPages ? -1 : undefined}
                              className={cn(
-                                "transition-opacity",
+                               "transition-opacity",
                                currentPage >= totalPages ? "pointer-events-none opacity-50" : "hover:bg-accent"
                              )}
                           />

@@ -28,27 +28,27 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-
+import { ItemForm } from '@/components/item-form'; // Import ItemForm
 
 export function Header() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, loginWithGoogle } = useAuth(); // Use new auth methods
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false); // State for Report Item dialog
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  // Ensure component is mounted before rendering theme toggle to avoid hydration mismatch
   useEffect(() => {
       setMounted(true);
   }, []);
 
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      await logout();
+      logout(); // Call logout from context
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
       router.push('/'); // Redirect to home after logout
     } catch (error: any) {
@@ -57,50 +57,102 @@ export function Header() {
     }
   };
 
-   const getInitials = (email?: string | null) => {
-       if (!email) return '??';
-       const namePart = email.split('@')[0];
-       if (namePart.includes('.')) {
-            // Use initials from parts split by dot
-           return namePart.split('.').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-       }
-       // Default to first two chars of email name part
-       return namePart.substring(0, 2).toUpperCase();
-   }
+    // Function to get initials for Avatar fallback
+    const getInitials = (displayName?: string | null, email?: string | null) => {
+        if (displayName) {
+            return displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+        if (email) {
+            const namePart = email.split('@')[0];
+            if (namePart.includes('.')) {
+                return namePart.split('.').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            }
+            return namePart.substring(0, 2).toUpperCase();
+        }
+        return '??';
+    };
+
 
    const openReportDialog = () => {
        if (!user && !loading) {
            toast({ variant: "destructive", title: "Login Required", description: "Please log in to report an item." });
-       } else if (!loading) {
-          // Option 1: Navigate to a dedicated report page
-           // router.push('/report');
-          // Option 2: Scroll to a section on the home page (if applicable)
-          // router.push('/#report-item');
-          // Option 3: Open a dialog (requires ItemForm to be available, like on ItemsPage)
-           setIsReportDialogOpen(true); // Assuming we add a dialog here or use a global one
+            // Optionally open login dialog
+            // setIsLoginOpen(true);
+       } else if (!loading) { // Only open if not loading and user exists
+          setIsReportDialogOpen(true);
        }
-       // Do nothing if auth is still loading
+       // Implicitly does nothing if authLoading is true
    }
+
+    // Handle item form submission from the header dialog
+    const handleReportSubmit = async (values: any) => { // Use 'any' for now, refine ItemFormValues later
+        if (!user) return; // Should not happen if dialog is opened correctly
+
+        setIsSubmittingReport(true);
+        const formData = new FormData();
+        Object.keys(values).forEach(key => {
+             if (key === 'date') {
+                formData.append(key, values[key].toISOString()); // Ensure date is ISO string
+            } else if (key === 'image' && values.image) {
+                formData.append(key, values.image); // Append the file object
+            } else if (values[key] !== undefined && values[key] !== null) {
+                formData.append(key, values[key]);
+            }
+        });
+
+         // Add user ID (although backend gets it from token, might be useful)
+         // formData.append('userId', user._id);
+
+        try {
+            // Replace with your actual API call
+            const response = await fetch('/api/items', { // Adjust API endpoint if needed
+                method: 'POST',
+                headers: {
+                    // Content-Type is set automatically by browser for FormData
+                    'x-auth-token': localStorage.getItem('token') || '', // Send token
+                },
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.msg || 'Failed to report item');
+            }
+
+            // const newItem = await response.json();
+            toast({ title: "Item Reported", description: "Your item has been posted." });
+            setIsReportDialogOpen(false); // Close dialog
+            // Optionally redirect or refresh item list
+             router.push('/items'); // Redirect to items page
+
+        } catch (error: any) {
+            console.error("Error submitting report:", error);
+            toast({ variant: 'destructive', title: 'Report Failed', description: error.message || 'Could not submit item.' });
+        } finally {
+            setIsSubmittingReport(false);
+        }
+    };
+
 
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 shadow-sm">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6"> {/* Use justify-between */}
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         {/* Left Section: Logo */}
         <Link href="/" className="flex items-center space-x-2 group">
-          <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" />
+           {/* Use previous logo or adjust */}
+           <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" />
           <span className="font-bold text-xl text-foreground">Lost & Found</span>
         </Link>
 
         {/* Center Section: Navigation Links */}
-        <nav className="hidden items-center justify-center space-x-6 md:flex flex-grow"> {/* Use flex-grow and justify-center */}
+        <nav className="hidden items-center justify-center space-x-6 md:flex flex-grow">
          <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Home</Link>
-         <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Lost Items</Link>
-         <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Found Items</Link>
-          {/* Report Item button - adjusted style */}
-          <Button variant="ghost" size="sm" onClick={() => router.push('/items#report-item')} className="text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary px-3" disabled={loading}>
+         <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Browse Items</Link>
+          {/* Report Item button */}
+           <Button variant="ghost" size="sm" onClick={openReportDialog} className="text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary px-3" disabled={loading}>
              Report Item
-          </Button>
+           </Button>
         </nav>
 
         {/* Right Section: Auth and Theme Controls */}
@@ -112,7 +164,6 @@ export function Header() {
                 size="icon"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label="Toggle theme"
-                // Use background from theme, ensure smooth transition
                 className="bg-transparent transition-transform transform hover:scale-110 duration-300 hover:bg-accent rounded-full"
             >
                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-foreground" />
@@ -131,17 +182,20 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full transition-transform transform hover:scale-110 duration-300">
                   <Avatar className="h-9 w-9">
+                     {/* Use photoURL from user object */}
                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'} />
-                    <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                     {/* Fallback uses initials */}
+                    <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
+                     {/* Display user info */}
                     <p className="text-sm font-medium leading-none truncate">{user.displayName || 'User'}</p>
                     <p className="text-xs leading-none text-muted-foreground truncate">
-                      {user.email}
+                      {user.email || user.phoneNumber}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -166,7 +220,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2"> {/* Use gap here as well */}
+            <div className="flex items-center gap-2">
              <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="text-sm font-medium text-foreground hover:text-primary transition-colors px-3">
@@ -207,7 +261,7 @@ export function Header() {
         </div>
       </div>
 
-      {/* Dialog for reporting item (optional, if needed directly in header) */}
+       {/* Report Item Dialog (using ItemForm) */}
        <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
           <DialogContent className="sm:max-w-[425px] md:max-w-lg">
              <DialogHeader>
@@ -217,15 +271,11 @@ export function Header() {
                  </DialogDescription>
              </DialogHeader>
              <div className="py-4">
-                 {/* ItemForm needs onSubmit and isSubmitting props passed */}
-                 {/* Example: <ItemForm onSubmit={handleHeaderFormSubmit} isSubmitting={isHeaderSubmitting} /> */}
-                 {/* You'd need to manage submission state specific to this dialog */}
-                 <p className="text-center text-muted-foreground">Reporting form would appear here.</p>
-                 <p className="text-center text-xs text-muted-foreground">(Please use the 'Report Item' button on the Items page for now)</p>
+                 {/* Pass onSubmit and isSubmitting state */}
+                 <ItemForm onSubmit={handleReportSubmit} isSubmitting={isSubmittingReport} />
              </div>
          </DialogContent>
        </Dialog>
     </header>
   );
 }
-

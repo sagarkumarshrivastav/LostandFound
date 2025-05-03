@@ -2,32 +2,37 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { createContext, useState, useEffect, useMemo } from 'react';
-import {
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile, // Import updateProfile
-  type User,
-  type Auth,
-} from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase'; // Import function to get auth instance
+import { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import axios from 'axios'; // Use axios for API calls
+import type { User } from '@/types/user'; // Define a User type for frontend
+
+// Define the API base URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<any>;
-  signup: (email: string, pass: string) => Promise<any>;
-  logout: () => Promise<void>;
-  loginWithGoogle: () => Promise<any>;
-  updateUserProfile: (updates: Partial<Pick<User, 'displayName' | 'photoURL'>>) => Promise<void>; // Added type
-  authInstance: Auth | null; // Expose the auth instance
+  login: (credentials: { email?: string; phoneNumber?: string; password: string }) => Promise<void>;
+  signup: (userData: { displayName?: string; email?: string; phoneNumber?: string; password: string }) => Promise<void>;
+  logout: () => void;
+  loginWithGoogle: () => void; // Redirects to backend Google auth route
+  updateUserProfile: (formData: FormData) => Promise<User>; // Use FormData for file uploads
+  loadUser: () => Promise<void>; // Function to load user data using token
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Function to set token in Axios headers and local storage
+const setAuthToken = (token: string | null) => {
+  if (token) {
+    axios.defaults.headers.common['x-auth-token'] = token;
+    localStorage.setItem('token', token);
+  } else {
+    delete axios.defaults.headers.common['x-auth-token'];
+    localStorage.removeItem('token');
+  }
+};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -35,143 +40,134 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Start loading until auth state is confirmed
-  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
-  const [authInitialized, setAuthInitialized] = useState(false); // Track if auth instance initialization attempt finished
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // Start loading until user state is confirmed
 
-  // Attempt to initialize auth instance on mount
-  useEffect(() => {
-    console.log("Attempting to initialize Firebase Auth instance...");
-    const instance = getFirebaseAuth();
-    if (instance) {
-        console.log("Firebase Auth instance obtained successfully.");
-        setAuthInstance(instance);
-        setAuthInitialized(true); // Mark initialization as successful
+
+  const loadUser = useCallback(async () => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && !user) { // Only load if token exists and user isn't already set
+      // console.log("AuthProvider: Found token in storage, attempting to load user...");
+      setAuthToken(storedToken); // Set token for the upcoming API call
+      setToken(storedToken);
+      try {
+        const res = await axios.get<User>(`${API_URL}/auth/me`);
+        // console.log("AuthProvider: User loaded successfully:", res.data);
+        setUser(res.data);
+      } catch (err: any) {
+        console.error("AuthProvider: Error loading user:", err.response?.data?.msg || err.message);
+        setAuthToken(null); // Remove invalid token
+        setToken(null);
+        setUser(null);
+      } finally {
+         // Ensure loading is set to false even if user load fails but token existed initially
+         if (loading) setLoading(false);
+      }
     } else {
-        console.error("Failed to get Firebase Auth instance from getFirebaseAuth(). Check Firebase config (API Key, etc.) and initialization logs in firebase.ts.");
-        setAuthInitialized(true); // Mark attempt as complete, even if failed
-        setLoading(false); // Stop loading if auth instance is definitively unavailable
+        // console.log("AuthProvider: No token found or user already loaded.");
+        // No token found, stop loading
+        if (loading) setLoading(false);
     }
-  }, []); // Run only once on mount
+  }, [loading, user]); // Depend on loading and user state
 
-  // Set up the auth state listener once the instance is potentially available
+   // Load user on initial mount or when token might change externally
   useEffect(() => {
-    // Only proceed if the initialization attempt is complete
-    if (!authInitialized) {
-        console.log("Auth initialization not yet attempted, skipping listener setup.");
-        return;
+    // console.log("AuthProvider: Initial mount effect - checking token/loading user.");
+    loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount to check initial token
+
+  const login = async (credentials: { email?: string; phoneNumber?: string; password: string }) => {
+    setLoading(true);
+    try {
+      const res = await axios.post<{ token: string }>(`${API_URL}/auth/login`, credentials);
+      setAuthToken(res.data.token);
+      setToken(res.data.token);
+      await loadUser(); // Load user data after successful login
+    } catch (err: any) {
+      console.error("Login error:", err.response?.data?.msg || err.message);
+      setAuthToken(null); // Clear token on failure
+      setToken(null);
+      setUser(null);
+       throw err; // Re-throw error to be caught by the form
+    } finally {
+      setLoading(false);
     }
-
-    if (!authInstance) {
-      // This confirms that the first effect failed to set a valid instance
-      console.error("Auth instance is not available after initialization attempt. Cannot set up auth state listener. Check previous errors.");
-      // Loading state should have been set to false in the first effect if instance was null
-      // setLoading(false); // Already handled in the first effect
-      return;
-    }
-
-    console.log("Auth instance available, setting up Firebase Auth listener...");
-    // setLoading(true); // No need to set loading true here, it starts true
-
-    const unsubscribe = onAuthStateChanged(authInstance, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false); // Auth state confirmed, stop loading
-      console.log("Auth state changed, user:", currentUser?.email ?? 'logged out');
-    }, (error) => {
-        // Handle errors during listener setup/execution
-        console.error("Error in onAuthStateChanged listener:", error);
-        setUser(null); // Assume logged out on error
-        setLoading(false); // Stop loading on error
-    });
-
-    // Cleanup subscription on unmount
-    return () => {
-        console.log("Cleaning up Firebase Auth listener.");
-        unsubscribe();
-    }
-    // Rerun effect ONLY if authInstance changes (which shouldn't happen after initial setup)
-    // Or if authInitialized becomes true AND authInstance is valid
-  }, [authInstance, authInitialized]);
-
-  const login = (email: string, pass: string) => {
-    if (!authInstance) {
-        console.error("Login failed: Auth not initialized");
-        return Promise.reject(new Error("Auth not initialized"));
-    }
-    return signInWithEmailAndPassword(authInstance, email, pass);
   };
 
-  const signup = (email: string, pass: string) => {
-     if (!authInstance) {
-        console.error("Signup failed: Auth not initialized");
-        return Promise.reject(new Error("Auth not initialized"));
-     }
-    return createUserWithEmailAndPassword(authInstance, email, pass);
+  const signup = async (userData: { displayName?: string; email?: string; phoneNumber?: string; password: string }) => {
+    setLoading(true);
+    try {
+      const res = await axios.post<{ token: string }>(`${API_URL}/auth/signup`, userData);
+      setAuthToken(res.data.token);
+      setToken(res.data.token);
+      await loadUser(); // Load user data after successful signup
+    } catch (err: any) {
+      console.error("Signup error:", err.response?.data?.msg || err.message);
+      setAuthToken(null); // Clear token on failure
+      setToken(null);
+      setUser(null);
+      throw err; // Re-throw error
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
-     if (!authInstance) {
-        console.error("Logout failed: Auth not initialized");
-        return Promise.reject(new Error("Auth not initialized"));
-     }
-    return signOut(authInstance);
+    console.log("AuthProvider: Logging out.");
+    setAuthToken(null);
+    setToken(null);
+    setUser(null);
+    setLoading(false); // User is definitively logged out
+     // Optionally redirect using router if needed here or in the component calling logout
   };
 
+  // Redirects to backend route to initiate Google OAuth flow
   const loginWithGoogle = () => {
-     if (!authInstance) {
-        console.error("Google login failed: Auth not initialized");
-        return Promise.reject(new Error("Auth not initialized"));
-     }
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(authInstance, provider);
+      // Construct the full backend URL
+      const googleAuthUrl = `${API_URL}/auth/google`;
+      console.log("AuthProvider: Redirecting to Google OAuth:", googleAuthUrl);
+      window.location.href = googleAuthUrl; // Redirect the browser
   };
 
-  // Function to update user profile
-   const updateUserProfile = async (updates: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-        if (!authInstance || !user) {
-            throw new Error("Auth instance or user not available for profile update.");
-        }
-         if (Object.keys(updates).length === 0) {
-            console.log("No profile updates provided.");
-            return;
-        }
-        try {
-            // Prepare the updates object specifically for updateProfile
-            const authUpdates: { displayName?: string | null; photoURL?: string | null } = {};
-            if (updates.displayName !== undefined) {
-                authUpdates.displayName = updates.displayName;
-            }
-            if (updates.photoURL !== undefined) {
-                authUpdates.photoURL = updates.photoURL;
-            }
+  // Function to update user profile using FormData
+  const updateUserProfile = async (formData: FormData): Promise<User> => {
+    if (!token) throw new Error("Not authenticated");
+    setLoading(true);
+    try {
+      // Ensure the token is set in headers for this request
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'x-auth-token': token, // Explicitly set token here if axios defaults aren't reliable
+        },
+      };
+      const res = await axios.put<User>(`${API_URL}/users/profile`, formData, config);
+      setUser(res.data); // Update user state with the returned updated user
+      return res.data; // Return updated user data
+    } catch (err: any) {
+      console.error("Profile update error:", err.response?.data?.msg || err.message);
+       throw err; // Re-throw error
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            await updateProfile(user, authUpdates);
-            // Manually update the user state to reflect changes immediately
-            setUser(authInstance.currentUser); // Re-fetch the current user from the instance
-            console.log("Firebase Auth profile updated successfully.");
-        } catch (error) {
-            console.error("Error updating Firebase Auth profile:", error);
-            throw error;
-        }
-   };
-
-
-  // Memoize the context value to prevent unnecessary re-renders
+  // Memoize the context value
    const value = useMemo(() => ({
       user,
+      token,
       loading,
       login,
       signup,
       logout,
       loginWithGoogle,
-      updateUserProfile, // Add the update function here
-      authInstance,
-    }), [user, loading, authInstance]); // Dependencies: user, loading state, and authInstance
-
+      updateUserProfile,
+      loadUser // Expose loadUser
+    }), [user, token, loading, loadUser]); // Include loadUser in dependencies
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Render children. Components should handle the loading state internally. */}
       {children}
     </AuthContext.Provider>
   );

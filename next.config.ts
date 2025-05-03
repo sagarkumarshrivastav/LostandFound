@@ -17,12 +17,21 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-       // Add pattern for Google User Profile Pictures if needed
+       // Add pattern for Google User Profile Pictures
       {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         port: '',
         pathname: '/**',
+      },
+      // Add pattern for Cloudinary images
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+         // Update pathname to match your Cloudinary account structure
+         // e.g., /your_cloud_name/image/upload/**
+        pathname: `/${process.env.CLOUDINARY_CLOUD_NAME || '*'}/image/upload/**`, // Use env var or wildcard
       },
     ],
   },
@@ -30,6 +39,13 @@ const nextConfig: NextConfig = {
    experimental: {
     // appDir: true, // This might be default now, but good to be explicit if needed
    },
+
+    // Add environment variables needed by the frontend client
+   env: {
+     NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production'
+        ? process.env.API_URL // Use production API URL from environment
+        : 'http://localhost:5000/api', // Default to local backend for dev
+   }
 };
 
 export default nextConfig;

@@ -17,24 +17,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Github, Chrome, Loader2 } from "lucide-react"; // Using Chrome icon for Google, added Loader2
+import { Chrome, Loader2 } from "lucide-react"; // Using Chrome icon for Google
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
+// Combined Schema for Login/Signup - adjust based on your exact needs
+const authSchema = z.object({
+  // Identifier can be email or phone
+  identifier: z.string().min(3, { message: "Email or Phone Number is required."}),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-});
-
-const signupSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
+  displayName: z.string().optional(), // Optional for signup
+  confirmPassword: z.string().optional(), // Optional for signup
+}).refine((data) => {
+    // Require confirmPassword only in signup mode
+    if (data.displayName !== undefined) { // Assuming displayName presence indicates signup
+        return data.password === data.confirmPassword;
+    }
+    return true; // Skip validation if not in signup mode
+}, {
   message: "Passwords don't match",
   path: ["confirmPassword"], // path of error
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
-type SignupFormValues = z.infer<typeof signupSchema>;
+// Refine further to check if identifier is email or phone (optional, but good practice)
+// .refine(...)
+
+type AuthFormValues = z.infer<typeof authSchema>;
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
@@ -47,25 +53,55 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const schema = mode === 'login' ? loginSchema : signupSchema;
-  const form = useForm<LoginFormValues | SignupFormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
-      ...(mode === 'signup' && { confirmPassword: "" }),
+      displayName: mode === 'signup' ? "" : undefined, // Only set for signup
+      confirmPassword: mode === 'signup' ? "" : undefined, // Only set for signup
     },
+     mode: "onChange", // Validate on change for better UX
   });
 
-  const onSubmit = async (values: LoginFormValues | SignupFormValues) => {
+   const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+   // Basic phone number check (adjust regex as needed for your expected format)
+   const isPhone = (value: string) => /^\+?[0-9\s\-()]{7,}$/.test(value);
+
+
+  const onSubmit = async (values: AuthFormValues) => {
     setIsLoading(true);
     try {
+       const isIdentifierEmail = isEmail(values.identifier);
+       const isIdentifierPhone = isPhone(values.identifier);
+
       if (mode === 'login') {
-        await login(values.email, values.password);
-        toast({ title: "Login Successful", description: "Welcome back!" });
-      } else {
-        await signup(values.email, (values as SignupFormValues).password);
-        toast({ title: "Signup Successful", description: "Welcome to Lost & Found!" }); // Updated welcome message
+          if (!isIdentifierEmail && !isIdentifierPhone) {
+              form.setError("identifier", { type: "manual", message: "Please enter a valid email or phone number." });
+              setIsLoading(false);
+              return;
+          }
+          const loginCredentials = {
+              ...(isIdentifierEmail && { email: values.identifier }),
+              ...(isIdentifierPhone && { phoneNumber: values.identifier }),
+              password: values.password,
+          };
+          await login(loginCredentials);
+          toast({ title: "Login Successful", description: "Welcome back!" });
+      } else { // Signup mode
+         if (!isIdentifierEmail && !isIdentifierPhone) {
+            form.setError("identifier", { type: "manual", message: "Please enter a valid email or phone number for signup." });
+             setIsLoading(false);
+             return;
+         }
+          const signupData = {
+              displayName: values.displayName || values.identifier.split('@')[0] || 'User', // Default display name
+              ...(isIdentifierEmail && { email: values.identifier }),
+              ...(isIdentifierPhone && { phoneNumber: values.identifier }),
+              password: values.password,
+          };
+          await signup(signupData);
+          toast({ title: "Signup Successful", description: "Welcome to Lost & Found!" });
       }
       onSuccess?.(); // Call success callback if provided
     } catch (error: any) {
@@ -73,7 +109,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       toast({
         variant: "destructive",
         title: `${mode === 'login' ? 'Login' : 'Signup'} Failed`,
-        description: error.message || `Could not ${mode}. Please try again.`,
+        description: error.response?.data?.msg || error.message || `Could not ${mode}. Please try again.`,
       });
     } finally {
       setIsLoading(false);
@@ -83,33 +119,48 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
    const handleGoogleLogin = async () => {
       setIsGoogleLoading(true);
       try {
-          await loginWithGoogle();
-          toast({ title: "Login Successful", description: "Welcome!" });
-          onSuccess?.();
-      } catch (error: any) {
-          console.error("Google login error:", error);
+          // Redirects to backend, no direct await needed here
+          loginWithGoogle();
+          // Success is handled by the /auth/callback page
+      } catch (error: any) { // Catch potential synchronous errors if any
+          console.error("Google login initiation error:", error);
           toast({
               variant: "destructive",
               title: "Google Login Failed",
-              description: error.message || "Could not log in with Google. Please try again.",
+              description: error.message || "Could not start Google login process.",
           });
-      } finally {
-          setIsGoogleLoading(false);
+           setIsGoogleLoading(false); // Stop loading on immediate error
       }
+      // No finally block needed to set loading false here, as redirect happens
   };
 
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {mode === 'signup' && (
+          <FormField
+            control={form.control}
+            name="displayName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Display Name (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your Name" {...field} disabled={isLoading || isGoogleLoading} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
-          name="email"
+          name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{mode === 'login' ? 'Email or Phone Number' : 'Email or Phone Number'}</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} disabled={isLoading || isGoogleLoading} />
+                <Input type="text" placeholder={mode === 'login' ? "you@example.com or +1234567890" : "Enter email or phone"} {...field} disabled={isLoading || isGoogleLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -163,7 +214,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           variant="outline"
           type="button"
           onClick={handleGoogleLogin}
-          disabled={isLoading || isGoogleLoading}
+          disabled={isLoading || isGoogleLoading} // Disable if local auth is processing too
           className="w-full"
         >
           {isGoogleLoading ? (
@@ -171,7 +222,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           ) : (
             <Chrome className="mr-2 h-4 w-4" /> // Using Chrome for Google
           )}
-          {isGoogleLoading ? 'Processing...' : 'Google'}
+          {isGoogleLoading ? 'Redirecting...' : 'Google'}
         </Button>
       </form>
     </Form>
