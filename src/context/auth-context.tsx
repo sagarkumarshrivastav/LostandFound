@@ -10,6 +10,7 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  updateProfile, // Import updateProfile
   type User,
   type Auth,
 } from 'firebase/auth';
@@ -22,6 +23,7 @@ interface AuthContextType {
   signup: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<any>;
+  updateUserProfile: (updates: Partial<Pick<User, 'displayName' | 'photoURL'>>) => Promise<void>; // Added type
   authInstance: Auth | null; // Expose the auth instance
 }
 
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // This confirms that the first effect failed to set a valid instance
       console.error("Auth instance is not available after initialization attempt. Cannot set up auth state listener. Check previous errors.");
       // Loading state should have been set to false in the first effect if instance was null
+      // setLoading(false); // Already handled in the first effect
       return;
     }
 
@@ -123,6 +126,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return signInWithPopup(authInstance, provider);
   };
 
+  // Function to update user profile
+   const updateUserProfile = async (updates: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
+        if (!authInstance || !user) {
+            throw new Error("Auth instance or user not available for profile update.");
+        }
+         if (Object.keys(updates).length === 0) {
+            console.log("No profile updates provided.");
+            return;
+        }
+        try {
+            // Prepare the updates object specifically for updateProfile
+            const authUpdates: { displayName?: string | null; photoURL?: string | null } = {};
+            if (updates.displayName !== undefined) {
+                authUpdates.displayName = updates.displayName;
+            }
+            if (updates.photoURL !== undefined) {
+                authUpdates.photoURL = updates.photoURL;
+            }
+
+            await updateProfile(user, authUpdates);
+            // Manually update the user state to reflect changes immediately
+            setUser(authInstance.currentUser); // Re-fetch the current user from the instance
+            console.log("Firebase Auth profile updated successfully.");
+        } catch (error) {
+            console.error("Error updating Firebase Auth profile:", error);
+            throw error;
+        }
+   };
+
+
   // Memoize the context value to prevent unnecessary re-renders
    const value = useMemo(() => ({
       user,
@@ -131,7 +164,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signup,
       logout,
       loginWithGoogle,
-      authInstance, // Provide authInstance
+      updateUserProfile, // Add the update function here
+      authInstance,
     }), [user, loading, authInstance]); // Dependencies: user, loading state, and authInstance
 
 

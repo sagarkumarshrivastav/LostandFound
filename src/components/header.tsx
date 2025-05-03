@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogIn, UserPlus, LayoutDashboard, LogOut, Search, FilePlus, FileQuestion, HomeIcon, RefreshCcw, Loader2 } from 'lucide-react'; // Added Loader2
+import { Moon, Sun, LogIn, UserPlus, LayoutDashboard, LogOut, Search, FilePlus, FileQuestion, HomeIcon, RefreshCcw, Loader2, UserCircle } from 'lucide-react'; // Added Loader2, UserCircle
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 import { AuthForm } from '@/components/auth/auth-form';
@@ -58,8 +58,14 @@ export function Header() {
   };
 
    const getInitials = (email?: string | null) => {
-      if (!email) return '??';
-      return email.substring(0, 2).toUpperCase();
+       if (!email) return '??';
+       const namePart = email.split('@')[0];
+       if (namePart.includes('.')) {
+            // Use initials from parts split by dot
+           return namePart.split('.').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+       }
+       // Default to first two chars of email name part
+       return namePart.substring(0, 2).toUpperCase();
    }
 
    const openReportDialog = () => {
@@ -141,6 +147,12 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                 <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent">
+                   <Link href="/profile">
+                     <UserCircle className="mr-2 h-4 w-4" />
+                     <span>Profile</span>
+                   </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent">
                    <Link href="/dashboard">
                      <LayoutDashboard className="mr-2 h-4 w-4" />
