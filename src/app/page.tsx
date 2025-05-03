@@ -1,3 +1,256 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { ItemList } from "@/components/item-list";
+import type { Item, ItemType } from "@/types/item";
+import { ItemForm, ItemFormValues } from '@/components/item-form';
+import { SearchFilterBar, SearchFilters } from '@/components/search-filter-bar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, MapPin } from 'lucide-react';
+import { getCurrentLocation } from '@/services/location'; // Assuming you have this service
+import type { Location } from '@/services/location';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Import Card components
+
+
+// --- Mock Data ---
+const generateMockItems = (count: number): Item[] => {
+  const items: Item[] = [];
+  const types: ItemType[] = ['lost', 'found'];
+  const titles = ["Keys", "Wallet", "Phone", "Backpack", "Laptop", "Book", "Glasses", "Watch", "Umbrella", "Jacket"];
+  const locations = ["Park", "Cafe", "Bus Stop", "Library", "Train Station", "Supermarket", "Office Building", "University Campus", "Restaurant", "Shopping Mall"];
+  const descriptions = [
+    "Found near the main entrance.",
+    "Lost on the number 12 bus.",
+    "Black leather wallet with ID.",
+    "iPhone 13, blue case.",
+    "Contains important documents.",
+    "Hardcover novel, slightly worn.",
+    "Prescription glasses, black frame.",
+    "Silver wristwatch, needs repair.",
+    "Large black umbrella.",
+    "Denim jacket, size medium."
+  ];
+
+  for (let i = 0; i < count; i++) {
+    const type = types[Math.floor(Math.random() * types.length)];
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 30)); // Within the last 30 days
+    const latOffset = (Math.random() - 0.5) * 0.1; // Small offset for variety
+    const lngOffset = (Math.random() - 0.5) * 0.1; // Small offset for variety
+
+    items.push({
+      id: `item-${i + 1}`,
+      type: type,
+      title: `${type === 'lost' ? 'Lost' : 'Found'}: ${titles[Math.floor(Math.random() * titles.length)]}`,
+      description: descriptions[Math.floor(Math.random() * descriptions.length)] + ` Item ID: ${i+1}`,
+      imageUrl: `https://picsum.photos/400/300?random=${i+1}`, // Placeholder image
+      location: locations[Math.floor(Math.random() * locations.length)],
+      date: date,
+      lat: 34.0522 + latOffset, // Centered around LA
+      lng: -118.2437 + lngOffset,
+    });
+  }
+  return items;
+};
+// --- End Mock Data ---
+
+// Haversine formula to calculate distance between two points
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in kilometers
+};
+
 export default function Home() {
-  return <></>;
+  const [allItems, setAllItems] = useState<Item[]>([]);
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<SearchFilters>({ keyword: '', proximity: 10 });
+
+  // Load initial data (mock or API)
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      const mockItems = generateMockItems(20);
+      setAllItems(mockItems);
+      setFilteredItems(mockItems); // Initially show all items
+      setIsLoading(false);
+    }, 1500); // Simulate network delay
+  }, []);
+
+  // Function to handle getting current location
+  const handleGetCurrentLocation = async () => {
+    setIsSearchingLocation(true);
+    try {
+      const location = await getCurrentLocation();
+      setCurrentLocation(location);
+      // Re-apply filters immediately after getting location if proximity filter is active
+      applyFilters({ ...activeFilters, proximity: activeFilters.proximity ?? 10 }); // Use existing proximity or default
+    } catch (error) {
+      console.error("Error getting location:", error);
+      // Handle error (e.g., show toast notification)
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
+  // Function to apply filters
+  const applyFilters = (filters: SearchFilters) => {
+    setActiveFilters(filters); // Store the latest filters
+    setIsLoading(true); // Show loading state while filtering
+
+    let tempFiltered = [...allItems];
+
+    // Filter by keyword
+    if (filters.keyword) {
+      const lowerKeyword = filters.keyword.toLowerCase();
+      tempFiltered = tempFiltered.filter(item =>
+        item.title.toLowerCase().includes(lowerKeyword) ||
+        item.description.toLowerCase().includes(lowerKeyword)
+      );
+    }
+
+    // Filter by date
+    if (filters.date) {
+        const filterDate = new Date(filters.date);
+        filterDate.setHours(0, 0, 0, 0); // Normalize filter date to start of day
+        tempFiltered = tempFiltered.filter(item => {
+            const itemDate = new Date(item.date);
+            itemDate.setHours(0, 0, 0, 0); // Normalize item date to start of day
+            return itemDate.getTime() === filterDate.getTime();
+        });
+    }
+
+    // Filter by proximity (only if currentLocation is available)
+    if (filters.proximity && currentLocation) {
+      tempFiltered = tempFiltered.filter(item => {
+        if (item.lat && item.lng) {
+          const distance = calculateDistance(currentLocation.lat, currentLocation.lng, item.lat, item.lng);
+          return distance <= filters.proximity!;
+        }
+        return false; // Don't include items without coordinates if filtering by proximity
+      });
+    }
+
+    // Simulate filtering delay
+    setTimeout(() => {
+        setFilteredItems(tempFiltered);
+        setIsLoading(false);
+    }, 300);
+  };
+
+
+  // Handle form submission
+  const handleFormSubmit = async (values: ItemFormValues) => {
+    setIsSubmitting(true);
+    console.log("Submitting item:", values);
+
+    // Simulate API call for submission
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const newItem: Item = {
+      id: `item-${Date.now()}`, // Simple unique ID generation
+      type: values.type as ItemType,
+      title: values.title,
+      description: values.description,
+      // Simulate image upload URL if an image was provided
+      imageUrl: values.image ? `https://picsum.photos/400/300?random=${Date.now()}` : undefined,
+      location: values.location,
+      date: values.date,
+      // Add lat/lng if available from location input (future enhancement)
+    };
+
+    // Add to the main list and update filtered list
+    const updatedAllItems = [newItem, ...allItems];
+    setAllItems(updatedAllItems);
+    // Re-apply current filters to include the new item if it matches
+    applyFilters(activeFilters);
+
+    setIsSubmitting(false);
+    setIsFormOpen(false); // Close the dialog on successful submission
+     // Optionally show a success toast
+  };
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <header className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
+        <h1 className="text-3xl font-bold text-primary">
+          FindIt Local
+        </h1>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+             <Button className="w-full md:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" /> Report Item
+              </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] md:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Report a Lost or Found Item</DialogTitle>
+              <DialogDescription>
+                Fill in the details below. Be as specific as possible.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+               <ItemForm onSubmit={handleFormSubmit} isSubmitting={isSubmitting} />
+            </div>
+             {/* <DialogFooter>
+               <DialogClose asChild>
+                 <Button type="button" variant="secondary">
+                   Cancel
+                 </Button>
+               </DialogClose>
+             </DialogFooter> */}
+          </DialogContent>
+        </Dialog>
+      </header>
+
+      <main>
+        <SearchFilterBar
+          onSearch={applyFilters}
+          isSearchingLocation={isSearchingLocation}
+          onGetCurrentLocation={handleGetCurrentLocation}
+        />
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="w-full">
+                <CardHeader className='p-0'>
+                    <Skeleton className="h-48 w-full rounded-t-lg rounded-b-none" />
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                   <div className="flex items-center space-x-2 pt-2">
+                      <Skeleton className="h-4 w-4 rounded-full" />
+                      <Skeleton className="h-4 w-1/2" />
+                   </div>
+                    <div className="flex items-center space-x-2">
+                        <Skeleton className="h-4 w-4 rounded-full" />
+                       <Skeleton className="h-4 w-1/3" />
+                    </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <ItemList items={filteredItems} />
+        )}
+      </main>
+    </div>
+  );
 }
