@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter } from 'next/font/google'; // Using Inter as a common sans-serif font
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
@@ -8,18 +8,14 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer'; // Import Footer
 import { ThemeProvider } from "@/components/theme-provider"; // Import ThemeProvider
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
   subsets: ['latin'],
+  variable: '--font-inter', // Define variable for Inter font
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
-  title: 'FindIt Local',
+  title: 'Lost & Found', // Updated Title
   description: 'Platform for reporting and finding lost items locally.',
 };
 
@@ -30,16 +26,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+      {/* Use Inter font variable */}
+      <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground`}>
          <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark" // Set default theme to dark
+          enableSystem={false} // Disable system preference to enforce dark theme initially
           disableTransitionOnChange
         >
           <AuthProvider>
             <Header />
-            <main className="flex-grow bg-background text-foreground">
+            <main className="flex-grow"> {/* Removed background/text classes, handled by body/theme */}
               {children}
             </main>
             <Footer />

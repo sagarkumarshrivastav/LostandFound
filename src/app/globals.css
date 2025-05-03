@@ -6,78 +6,82 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Define the color palette based on the image */
+/* Using HSL values */
 @layer base {
   :root {
-    /* Light Theme Colors */
-    --background: 0 0% 96.1%; /* Light Gray #F5F5F5 */
-    --foreground: 0 0% 3.9%; /* Dark Gray */
-    --card: 0 0% 100%; /* White for cards */
-    --card-foreground: 0 0% 3.9%; /* Dark Gray */
-    --popover: 0 0% 100%; /* White for popovers */
-    --popover-foreground: 0 0% 3.9%; /* Dark Gray */
-    --primary: 180 100% 25.1%; /* Teal #008080 */
-    --primary-foreground: 0 0% 98%; /* White */
-    --secondary: 207 90% 94.1%; /* Soft Blue #E3F2FD */
-    --secondary-foreground: 0 0% 9%; /* Dark Gray */
-    --muted: 207 90% 94.1%; /* Soft Blue #E3F2FD */
-    --muted-foreground: 0 0% 45.1%; /* Gray */
-    --accent: 207 90% 90%; /* Slightly darker Soft Blue for hover */
-    --accent-foreground: 0 0% 9%; /* Dark Gray */
-    --destructive: 0 84.2% 60.2%;
+    /* Light Theme (Adjusted slightly if needed, but focus is dark) */
+    --background: 0 0% 100%; /* White */
+    --foreground: 240 10% 3.9%; /* Dark Blue-Gray */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 240 10% 3.9%; /* Dark Blue-Gray */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 240 10% 3.9%; /* Dark Blue-Gray */
+    --primary: 262 83% 58%; /* Bright Purple */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 240 5% 96%; /* Very Light Gray */
+    --secondary-foreground: 240 10% 3.9%; /* Dark Blue-Gray */
+    --muted: 240 5% 96%; /* Very Light Gray */
+    --muted-foreground: 240 4% 46%; /* Medium Gray */
+    --accent: 240 5% 90%; /* Light Gray */
+    --accent-foreground: 240 10% 3.9%; /* Dark Blue-Gray */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%; /* Light Gray border */
-    --input: 0 0% 100%; /* White input background */
-    --ring: 180 100% 25.1%; /* Teal focus ring */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    /* Dark Theme Colors (Adjust as needed, using defaults for now) */
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 180 100% 35%; /* Slightly lighter Teal for dark mode */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 210 40% 15%; /* Darker Blue */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 210 40% 15%; /* Darker Blue */
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 210 40% 25%; /* Slightly lighter Dark Blue for hover */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 180 100% 35%; /* Teal focus ring */
-    --chart-1: 220 70% 50%;
+    --border: 240 6% 90%; /* Light Gray Border */
+    --input: 240 6% 90%; /* Light Gray Input */
+    --ring: 262 83% 62%; /* Slightly lighter Purple for ring */
+    --chart-1: 262 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --radius: 0.5rem;
+    /* Keep sidebar variables if they exist, adjust if needed */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 262 83% 62%;
+  }
+
+  .dark {
+    /* Dark Theme Colors based on the image */
+    --background: 240 10% 3.9%; /* Dark Navy/Almost Black */
+    --foreground: 0 0% 98%; /* White/Very Light Gray */
+    --card: 240 6% 10%; /* Slightly Lighter Dark */
+    --card-foreground: 0 0% 98%; /* White/Very Light Gray */
+    --popover: 240 10% 3.9%; /* Dark Navy/Almost Black */
+    --popover-foreground: 0 0% 98%; /* White/Very Light Gray */
+    --primary: 262 83% 58%; /* Bright Purple */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 240 4% 12%; /* Dark Gray/Purple Tint */
+    --secondary-foreground: 0 0% 90%; /* Light Gray */
+    --muted: 240 4% 12%; /* Dark Gray/Purple Tint */
+    --muted-foreground: 0 0% 63.9%; /* Medium Gray */
+    --accent: 262 83% 65%; /* Lighter Purple for Hover/Accent */
+    --accent-foreground: 0 0% 100%; /* White */
+    --destructive: 0 72% 51%; /* Red */
+    --destructive-foreground: 0 0% 98%; /* White */
+    --border: 240 4% 18%; /* Subtle Dark Border */
+    --input: 240 4% 18%; /* Subtle Dark Input Background */
+    --ring: 262 83% 62%; /* Slightly lighter Purple for ring */
+    --chart-1: 262 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    /* Adjust sidebar for dark theme */
+    --sidebar-background: 240 6% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 4% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 4% 18%;
+    --sidebar-ring: 262 83% 62%;
   }
 }
 
@@ -88,4 +92,10 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom class for the purple background section */
+.bg-cta-purple {
+  background-color: hsl(262, 83%, 58%); /* --primary color */
+  color: hsl(0, 0%, 100%); /* --primary-foreground */
 }

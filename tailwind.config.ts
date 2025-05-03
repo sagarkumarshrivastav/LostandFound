@@ -10,57 +10,62 @@ export default {
   theme: {
   	extend: {
   		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			},
-  			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
-  			}
-  		},
+        // Dark Theme Colors based on the image
+        background: 'hsl(240 10% 3.9%)', // Dark Navy/Almost Black
+        foreground: 'hsl(0 0% 98%)',     // White/Very Light Gray
+        card: {
+          DEFAULT: 'hsl(240 6% 10%)',      // Slightly Lighter Dark
+          foreground: 'hsl(0 0% 98%)',   // White/Very Light Gray
+        },
+        popover: {
+          DEFAULT: 'hsl(240 10% 3.9%)', // Dark Navy/Almost Black
+          foreground: 'hsl(0 0% 98%)',   // White/Very Light Gray
+        },
+        primary: {
+          DEFAULT: 'hsl(262 83% 58%)', // Bright Purple
+          foreground: 'hsl(0 0% 100%)', // White
+        },
+        secondary: {
+          DEFAULT: 'hsl(240 4% 12%)',      // Dark Gray/Purple Tint
+          foreground: 'hsl(0 0% 90%)',   // Light Gray
+        },
+        muted: {
+          DEFAULT: 'hsl(240 4% 12%)',      // Dark Gray/Purple Tint
+          foreground: 'hsl(0 0% 63.9%)',  // Medium Gray
+        },
+        accent: {
+          DEFAULT: 'hsl(262 83% 65%)', // Lighter Purple for Hover/Accent
+          foreground: 'hsl(0 0% 100%)', // White
+        },
+        destructive: {
+          DEFAULT: 'hsl(0 72% 51%)',      // Red
+          foreground: 'hsl(0 0% 98%)',   // White
+        },
+        border: 'hsl(240 4% 18%)',        // Subtle Dark Border
+        input: 'hsl(240 4% 18%)',          // Subtle Dark Input Background
+        ring: 'hsl(262 83% 62%)',        // Slightly lighter Purple for ring
+        'cta-purple': 'hsl(262 83% 58%)', // Explicitly define CTA purple if needed outside primary context
+
+        // Chart colors (can keep or adjust)
+        chart: {
+          '1': 'hsl(262 70% 50%)',
+          '2': 'hsl(160 60% 45%)',
+          '3': 'hsl(30 80% 55%)',
+          '4': 'hsl(280 65% 60%)',
+          '5': 'hsl(340 75% 55%)'
+        },
+        // Sidebar colors (adjust for dark theme)
+        sidebar: {
+          DEFAULT: 'hsl(240 6% 10%)',
+          foreground: 'hsl(0 0% 98%)',
+          primary: 'hsl(262 83% 58%)',
+          'primary-foreground': 'hsl(0 0% 100%)',
+          accent: 'hsl(240 4% 15%)',
+          'accent-foreground': 'hsl(0 0% 98%)',
+          border: 'hsl(240 4% 18%)',
+          ring: 'hsl(262 83% 62%)'
+        }
+      },
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
@@ -87,7 +92,10 @@ export default {
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out'
-  		}
+  		},
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'], // Add Inter font
+      },
   	}
   },
   plugins: [require("tailwindcss-animate")],
