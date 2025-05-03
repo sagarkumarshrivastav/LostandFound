@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogIn, UserPlus, LayoutDashboard, LogOut, Search, FilePlus, FileQuestion, HomeIcon, RefreshCcw, Loader2, UserCircle } from 'lucide-react'; // Added Loader2, UserCircle
+import { Moon, Sun, LogIn, UserPlus, LayoutDashboard, LogOut, Search, FilePlus, FileQuestion, HomeIcon, RefreshCcw, Loader2, UserCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 import { AuthForm } from '@/components/auth/auth-form';
@@ -27,7 +27,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useRouter } from 'next/navigation';
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast";
 
 
 export function Header() {
@@ -38,7 +38,7 @@ export function Header() {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false); // State for Report Item dialog
   const router = useRouter();
-  const { toast } = useToast(); // Use the imported hook
+  const { toast } = useToast();
 
   // Ensure component is mounted before rendering theme toggle to avoid hydration mismatch
   useEffect(() => {
@@ -85,15 +85,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 shadow-sm">
-      <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
-        {/* Logo and Brand Name - Increased margin-right */}
-        <Link href="/" className="flex items-center space-x-2 group mr-6">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6"> {/* Use justify-between */}
+        {/* Left Section: Logo */}
+        <Link href="/" className="flex items-center space-x-2 group">
           <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" />
           <span className="font-bold text-xl text-foreground">Lost & Found</span>
         </Link>
 
-        {/* Navigation Links - Adjusted spacing and added margin-right auto to push auth controls to the right */}
-        <nav className="hidden items-center space-x-6 md:flex mr-auto">
+        {/* Center Section: Navigation Links */}
+        <nav className="hidden items-center justify-center space-x-6 md:flex flex-grow"> {/* Use flex-grow and justify-center */}
          <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Home</Link>
          <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Lost Items</Link>
          <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Found Items</Link>
@@ -103,8 +103,8 @@ export function Header() {
           </Button>
         </nav>
 
-        {/* Auth and Theme Controls - Added gap */}
-        <div className="flex items-center gap-3"> {/* Use gap instead of space-x for consistent spacing */}
+        {/* Right Section: Auth and Theme Controls */}
+        <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             {mounted && (
             <Button
