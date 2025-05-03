@@ -43,11 +43,7 @@ export function Header() {
   // Ensure component is mounted before rendering theme toggle to avoid hydration mismatch
   useEffect(() => {
       setMounted(true);
-      // Set dark theme by default if theme is not set
-      if (!theme) {
-          setTheme('dark');
-      }
-  }, [setTheme, theme]);
+  }, []);
 
 
   const handleLogout = async () => {
@@ -55,9 +51,9 @@ export function Header() {
       await logout();
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
       router.push('/'); // Redirect to home after logout
-    } catch (error) {
+    } catch (error: any) {
       console.error("Logout failed:", error);
-       toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
+       toast({ variant: "destructive", title: "Logout Failed", description: error?.message || "Could not log out. Please try again." });
     }
   };
 
@@ -109,7 +105,10 @@ export function Header() {
                 size="icon"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label="Toggle theme"
-                className="transition-transform transform hover:scale-110 duration-300"
+                // Explicitly set background to the current theme's background
+                // In light mode, this will be white (or the defined light background)
+                // In dark mode, this will be the dark background color
+                className="bg-background transition-transform transform hover:scale-110 duration-300 hover:bg-accent"
             >
                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-foreground" />
                 <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-foreground" />
@@ -218,3 +217,4 @@ export function Header() {
     </header>
   );
 }
+
