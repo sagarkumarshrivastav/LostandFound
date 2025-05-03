@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -14,33 +15,39 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Correct import for Card components
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth hook
 import { useToast } from '@/hooks/use-toast'; // Import useToast hook
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"; // Import Pagination
 
 // --- Mock Data ---
 const generateMockItems = (count: number): Item[] => {
   const items: Item[] = [];
   const types: ItemType[] = ['lost', 'found'];
-  const titles = ["Keys", "Wallet", "Phone", "Backpack", "Laptop", "Book", "Glasses", "Watch", "Umbrella", "Jacket"];
-  const locations = ["Park", "Cafe", "Bus Stop", "Library", "Train Station", "Supermarket", "Office Building", "University Campus", "Restaurant", "Shopping Mall"];
+  const titles = ["Keys", "Wallet", "Phone", "Backpack", "Laptop", "Book", "Glasses", "Watch", "Umbrella", "Jacket", "Ring", "Headphones", "Scarf", "Gloves", "ID Card"];
+  const locations = ["Park", "Cafe", "Bus Stop", "Library", "Train Station", "Supermarket", "Office Building", "University Campus", "Restaurant", "Shopping Mall", "Airport", "Gym", "Cinema", "Beach", "Museum"];
   const descriptions = [
-    "Found near the main entrance.",
-    "Lost on the number 12 bus.",
-    "Black leather wallet with ID.",
-    "iPhone 13, blue case.",
-    "Contains important documents.",
-    "Hardcover novel, slightly worn.",
-    "Prescription glasses, black frame.",
-    "Silver wristwatch, needs repair.",
-    "Large black umbrella.",
-    "Denim jacket, size medium."
+    "Found near the main entrance, looks new.",
+    "Lost on the number 12 bus, green line.",
+    "Black leather wallet with several cards and some cash.",
+    "iPhone 14 Pro, deep purple, slight scratch on corner.",
+    "Dell XPS laptop in a grey sleeve, contains work files.",
+    "Hardcover copy of 'The Midnight Library'.",
+    "Ray-Ban prescription glasses, black frame.",
+    "Silver Seiko wristwatch, leather strap is worn.",
+    "Large collapsible black umbrella with wooden handle.",
+    "Blue North Face denim jacket, size medium.",
+    "Gold band ring, might be valuable.",
+    "Sony WH-1000XM4 headphones, black.",
+    "Woolen scarf, red and grey pattern.",
+    "Black leather gloves, seems like a pair.",
+    "University ID card for Jane Doe."
   ];
-  const userIds = ["user-1", "user-2", "user-3", "user-4"]; // Mock user IDs
+  const userIds = ["user-1", "user-2", "user-3", "user-4", "user-5", "user-6"]; // Mock user IDs
 
   for (let i = 0; i < count; i++) {
     const type = types[Math.floor(Math.random() * types.length)];
     const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * 30)); // Within the last 30 days
-    const latOffset = (Math.random() - 0.5) * 0.1; // Small offset for variety
-    const lngOffset = (Math.random() - 0.5) * 0.1; // Small offset for variety
+    date.setDate(date.getDate() - Math.floor(Math.random() * 90)); // Within the last 90 days
+    const latOffset = (Math.random() - 0.5) * 0.2; // Slightly wider offset
+    const lngOffset = (Math.random() - 0.5) * 0.2; // Slightly wider offset
 
     items.push({
       id: `item-${i + 1}`,
@@ -72,6 +79,8 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c; // Distance in kilometers
 };
 
+const ITEMS_PER_PAGE = 8; // Number of items to display per page
+
 export default function Home() {
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
@@ -84,16 +93,31 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth(); // Get user and auth loading state
   const { toast } = useToast(); // Get toast function
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Load initial data (mock or API)
   useEffect(() => {
     // Simulate API call
     setTimeout(() => {
-      const mockItems = generateMockItems(20);
+      const mockItems = generateMockItems(50); // Generate more items for pagination
       setAllItems(mockItems);
       setFilteredItems(mockItems); // Initially show all items
+      setTotalPages(Math.ceil(mockItems.length / ITEMS_PER_PAGE));
       setIsLoading(false);
     }, 1500); // Simulate network delay
   }, []);
+
+   // Update total pages whenever filtered items change
+   useEffect(() => {
+     setTotalPages(Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+     // Reset to page 1 if the current page becomes invalid
+     if (currentPage > Math.ceil(filteredItems.length / ITEMS_PER_PAGE)) {
+       setCurrentPage(1);
+     }
+   }, [filteredItems, currentPage]);
+
 
   // Function to handle getting current location
   const handleGetCurrentLocation = async () => {
@@ -116,6 +140,7 @@ export default function Home() {
   const applyFilters = (filters: SearchFilters) => {
     setActiveFilters(filters); // Store the latest filters
     setIsLoading(true); // Show loading state while filtering
+    setCurrentPage(1); // Reset to first page on new filter application
 
     let tempFiltered = [...allItems];
 
@@ -124,7 +149,8 @@ export default function Home() {
       const lowerKeyword = filters.keyword.toLowerCase();
       tempFiltered = tempFiltered.filter(item =>
         item.title.toLowerCase().includes(lowerKeyword) ||
-        item.description.toLowerCase().includes(lowerKeyword)
+        item.description.toLowerCase().includes(lowerKeyword) ||
+        item.location.toLowerCase().includes(lowerKeyword) // Also search location
       );
     }
 
@@ -146,7 +172,9 @@ export default function Home() {
           const distance = calculateDistance(currentLocation.lat, currentLocation.lng, item.lat, item.lng);
           return distance <= filters.proximity!;
         }
-        return false; // Don't include items without coordinates if filtering by proximity
+        // Decide whether to include items without coordinates
+        // return true; // Include items without coords even when proximity filter is on
+        return false; // Exclude items without coords when proximity filter is on
       });
     }
 
@@ -181,7 +209,9 @@ export default function Home() {
       location: values.location,
       date: values.date,
       userId: user.uid, // Assign the logged-in user's ID
-      // Add lat/lng if available from location input (future enhancement)
+      // TODO: Add lat/lng based on location input (needs geocoding)
+      lat: currentLocation?.lat, // Example: Use current location if available
+      lng: currentLocation?.lng,
     };
 
     // Add to the main list and update filtered list
@@ -203,6 +233,19 @@ export default function Home() {
       }
       // Do nothing if auth is still loading
   }
+
+  // Calculate items for the current page
+   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+   const endIndex = startIndex + ITEMS_PER_PAGE;
+   const currentItems = filteredItems.slice(startIndex, endIndex);
+
+   const handlePageChange = (newPage: number) => {
+     if (newPage >= 1 && newPage <= totalPages) {
+       setCurrentPage(newPage);
+       window.scrollTo(0, 0); // Scroll to top on page change
+     }
+   };
+
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -237,7 +280,7 @@ export default function Home() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(ITEMS_PER_PAGE)].map((_, i) => ( // Show skeletons for one page
               <Card key={i} className="w-full">
                 <CardHeader className='p-0'>
                     <Skeleton className="h-48 w-full rounded-t-lg rounded-b-none" />
@@ -259,8 +302,57 @@ export default function Home() {
             ))}
           </div>
         ) : (
-          <ItemList items={filteredItems} />
+           <>
+              <ItemList items={currentItems} />
+              {totalPages > 1 && (
+                 <div className="mt-8 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
+                            aria-disabled={currentPage <= 1}
+                            tabIndex={currentPage <= 1 ? -1 : undefined}
+                            className={
+                              currentPage <= 1 ? "pointer-events-none opacity-50" : undefined
+                            }
+                          />
+                        </PaginationItem>
+
+                        {/* Simplified Pagination Links - Can be enhanced later */}
+                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                             <PaginationItem key={page}>
+                             <PaginationLink
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); handlePageChange(page); }}
+                                isActive={currentPage === page}
+                             >
+                                {page}
+                             </PaginationLink>
+                             </PaginationItem>
+                         ))}
+                         {/* Add Ellipsis logic if needed for many pages */}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
+                            aria-disabled={currentPage >= totalPages}
+                            tabIndex={currentPage >= totalPages ? -1 : undefined}
+                             className={
+                               currentPage >= totalPages ? "pointer-events-none opacity-50" : undefined
+                             }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                 </div>
+              )}
+           </>
         )}
     </div>
   );
 }
+
+    

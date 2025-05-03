@@ -4,11 +4,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import type { Item } from '@/types/item';
+import type { Item, ItemType } from '@/types/item'; // Ensure ItemType is exported/imported if needed elsewhere
 import { ItemList } from '@/components/item-list';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Import Card for Skeleton structure
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"; // Import Pagination
 
 // --- Mock Data Fetching ---
 // Replace this with actual API calls later
@@ -65,13 +66,17 @@ const fetchUserItems = async (userId: string): Promise<Item[]> => {
 };
 // --- End Mock Data Fetching ---
 
-type ItemType = 'lost' | 'found'; // Re-define if not imported from types/item
+const ITEMS_PER_PAGE = 8; // Items per page for the dashboard list
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [userItems, setUserItems] = useState<Item[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(true);
+
+  // Pagination state for user items
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     // If auth is done loading and there's no user, redirect to home
@@ -86,6 +91,8 @@ export default function DashboardPage() {
       fetchUserItems(user.uid)
         .then(items => {
           setUserItems(items);
+          setTotalPages(Math.ceil(items.length / ITEMS_PER_PAGE));
+          setCurrentPage(1); // Reset to first page when items load/change
         })
         .catch(error => {
           console.error("Error fetching user items:", error);
@@ -97,16 +104,43 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
+  // Update total pages if userItems changes (e.g., after deleting an item - future feature)
+  useEffect(() => {
+    setTotalPages(Math.ceil(userItems.length / ITEMS_PER_PAGE));
+    // Reset to page 1 if the current page becomes invalid
+    if (currentPage > Math.ceil(userItems.length / ITEMS_PER_PAGE)) {
+      setCurrentPage(1);
+    }
+  }, [userItems, currentPage]);
+
+
+  // Calculate items for the current page
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentUserItemsPage = userItems.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+       window.scrollTo(0, 0); // Scroll to top on page change
+    }
+  };
+
+
   // Show loading state while checking auth or fetching items
   if (loading || isLoadingItems) {
     return (
         <div className="container mx-auto p-4 md:p-6 lg:p-8">
           <h1 className="text-3xl font-bold mb-6">My Dashboard</h1>
+           <div className="mb-8 p-4 border rounded-lg bg-card shadow-sm">
+             <Skeleton className="h-6 w-1/2 mb-2" />
+             <Skeleton className="h-4 w-3/4" />
+           </div>
            <div className="mb-4">
               <Skeleton className="h-8 w-1/4" />
            </div>
            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(ITEMS_PER_PAGE)].map((_, i) => ( // Show skeletons for one page
               <Card key={i} className="w-full">
                  <CardHeader className='p-0'>
                     <Skeleton className="h-48 w-full rounded-t-lg rounded-b-none" />
@@ -150,7 +184,51 @@ export default function DashboardPage() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">My Reported Items</h2>
         {userItems.length > 0 ? (
-          <ItemList items={userItems} />
+          <>
+            <ItemList items={currentUserItemsPage} />
+             {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                   <Pagination>
+                     <PaginationContent>
+                       <PaginationItem>
+                         <PaginationPrevious
+                           href="#"
+                           onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
+                           aria-disabled={currentPage <= 1}
+                           tabIndex={currentPage <= 1 ? -1 : undefined}
+                           className={
+                             currentPage <= 1 ? "pointer-events-none opacity-50" : undefined
+                           }
+                         />
+                       </PaginationItem>
+                       {/* Simplified Pagination Links */}
+                       {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                           <PaginationItem key={page}>
+                           <PaginationLink
+                              href="#"
+                              onClick={(e) => { e.preventDefault(); handlePageChange(page); }}
+                              isActive={currentPage === page}
+                           >
+                              {page}
+                           </PaginationLink>
+                           </PaginationItem>
+                       ))}
+                       <PaginationItem>
+                         <PaginationNext
+                           href="#"
+                           onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
+                           aria-disabled={currentPage >= totalPages}
+                           tabIndex={currentPage >= totalPages ? -1 : undefined}
+                            className={
+                              currentPage >= totalPages ? "pointer-events-none opacity-50" : undefined
+                            }
+                         />
+                       </PaginationItem>
+                     </PaginationContent>
+                   </Pagination>
+                </div>
+             )}
+          </>
         ) : (
           <p className="text-muted-foreground">You haven't reported any items yet.</p>
         )}
@@ -164,3 +242,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
