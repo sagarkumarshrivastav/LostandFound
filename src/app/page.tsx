@@ -11,46 +11,13 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'; // Import motion and hooks
+import { motion } from 'framer-motion'; // Keep motion for other animations
 
 export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const heroRef = useRef<HTMLDivElement>(null); // Ref for the hero section
-
-  // --- 3D Tilt Effect ---
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    if (!heroRef.current) return;
-    const { left, top, width, height } = heroRef.current.getBoundingClientRect();
-    // Calculate mouse position relative to the center of the element
-    const x = event.clientX - left - width / 2;
-    const y = event.clientY - top - height / 2;
-    mouseX.set(x);
-    mouseY.set(y);
-  };
-
-  const handleMouseLeave = () => {
-    // Reset position smoothly when mouse leaves
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  // Apply spring physics for smoother animation
-  const springConfig = { stiffness: 150, damping: 20, mass: 1 };
-  const smoothMouseX = useSpring(mouseX, springConfig);
-  const smoothMouseY = useSpring(mouseY, springConfig);
-
-  // Transform mouse position into rotation values (adjust multiplier for sensitivity)
-  const rotateX = useTransform(smoothMouseY, [-150, 150], [10, -10]); // Rotate based on Y position
-  const rotateY = useTransform(smoothMouseX, [-150, 150], [-10, 10]); // Rotate based on X position
-
-  // --- End 3D Tilt Effect ---
-
 
   // Handle form submission (keep this logic)
   const handleFormSubmit = async (values: ItemFormValues) => {
@@ -111,31 +78,19 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden"> {/* Prevent horizontal scroll */}
 
-      {/* Hero Section */}
+      {/* Hero Section - Removed 3D Tilt Effect */}
       <motion.section
-        ref={heroRef} // Attach ref
-        className="w-full py-20 md:py-32 lg:py-40 bg-background text-foreground overflow-hidden" // Added overflow-hidden
+        className="w-full py-20 md:py-32 lg:py-40 bg-background text-foreground overflow-hidden"
         initial="hidden"
         animate="visible"
         variants={sectionVariants}
-        style={{ perspective: '1000px' }} // Set perspective on the container
-        onMouseMove={handleMouseMove} // Handle mouse movement
-        onMouseLeave={handleMouseLeave} // Handle mouse leaving
       >
-        <motion.div // Inner div for 3D transform
-          style={{
-            rotateX, // Apply dynamic rotation based on mouse Y
-            rotateY, // Apply dynamic rotation based on mouse X
-            transformStyle: 'preserve-3d', // Enable 3D space for children
-          }}
-          className="container mx-auto px-4 md:px-6 text-center"
-        >
+        <div className="container mx-auto px-4 md:px-6 text-center">
           <motion.h1
             className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            style={{ transform: 'translateZ(20px)' }} // Push title slightly forward
           >
             Reconnect with Your Lost Belongings
           </motion.h1>
@@ -144,7 +99,6 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-             style={{ transform: 'translateZ(10px)' }} // Push description slightly forward
           >
             Our Lost and Found platform helps people reunite with their valuable items through a simple, secure, and community-driven approach.
           </motion.p>
@@ -153,7 +107,6 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            style={{ transform: 'translateZ(30px)' }} // Push buttons further forward
           >
              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base transition-transform transform hover:scale-105 duration-300" asChild>
                <Link href="/items">
@@ -169,7 +122,7 @@ export default function Home() {
                Report Found Item
             </Button>
           </motion.div>
-        </motion.div>
+        </div>
       </motion.section>
 
       {/* How It Works Section */}
