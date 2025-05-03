@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Github, Chrome } from "lucide-react"; // Using Chrome icon for Google
+import { Github, Chrome, Loader2 } from "lucide-react"; // Using Chrome icon for Google, added Loader2
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -109,7 +109,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} />
+                <Input type="email" placeholder="you@example.com" {...field} disabled={isLoading || isGoogleLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -122,7 +122,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" placeholder="••••••••" {...field} disabled={isLoading || isGoogleLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -136,7 +136,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               <FormItem>
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <Input type="password" placeholder="••••••••" {...field} disabled={isLoading || isGoogleLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -144,6 +144,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           />
         )}
         <Button type="submit" disabled={isLoading || isGoogleLoading} className="w-full">
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Sign Up')}
         </Button>
 
@@ -165,7 +166,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           disabled={isLoading || isGoogleLoading}
           className="w-full"
         >
-          <Chrome className="mr-2 h-4 w-4" /> {/* Using Chrome for Google */}
+          {isGoogleLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Chrome className="mr-2 h-4 w-4" /> // Using Chrome for Google
+          )}
           {isGoogleLoading ? 'Processing...' : 'Google'}
         </Button>
       </form>

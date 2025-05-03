@@ -8,7 +8,7 @@ import type { Item, ItemType } from "@/types/item";
 import { ItemForm, ItemFormValues } from '@/components/item-form'; // Keep for reporting dialog if needed here too
 import { SearchFilterBar, SearchFilters } from '@/components/search-filter-bar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react'; // Added Loader2
 import { getCurrentLocation } from '@/services/location';
 import type { Location } from '@/services/location';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -112,9 +112,13 @@ export default function ItemsPage() {
 
    // Update total pages whenever filtered items change
    useEffect(() => {
-     setTotalPages(Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
-     if (currentPage > Math.ceil(filteredItems.length / ITEMS_PER_PAGE)) {
+     const newTotalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+     setTotalPages(newTotalPages);
+     // Reset to first page if current page becomes invalid after filtering
+     if (currentPage > newTotalPages && newTotalPages > 0) {
        setCurrentPage(1);
+     } else if (newTotalPages === 0) {
+        setCurrentPage(1); // Or 0 if you prefer for no items
      }
    }, [filteredItems, currentPage]);
 
@@ -125,8 +129,9 @@ export default function ItemsPage() {
     try {
       const location = await getCurrentLocation();
       setCurrentLocation(location);
+      // Re-apply filters with the new location and default proximity
       applyFilters({ ...activeFilters, proximity: activeFilters.proximity ?? 10 });
-      toast({ title: "Location Found", description: "Current location updated." });
+      toast({ title: "Location Found", description: "Current location updated and filters applied." });
     } catch (error) {
       console.error("Error getting location:", error);
       toast({ variant: "destructive", title: "Location Error", description: "Could not get your current location." });
@@ -138,48 +143,53 @@ export default function ItemsPage() {
   // Function to apply filters
   const applyFilters = (filters: SearchFilters) => {
     setActiveFilters(filters);
-    setIsLoading(true);
-    setCurrentPage(1);
+    setIsLoading(true); // Show loading state during filtering
+    setCurrentPage(1); // Reset to page 1 when filters change
 
-    let tempFiltered = [...allItems];
-
-    // Filter by keyword
-    if (filters.keyword) {
-      const lowerKeyword = filters.keyword.toLowerCase();
-      tempFiltered = tempFiltered.filter(item =>
-        item.title.toLowerCase().includes(lowerKeyword) ||
-        item.description.toLowerCase().includes(lowerKeyword) ||
-        item.location.toLowerCase().includes(lowerKeyword)
-      );
-    }
-
-    // Filter by date
-    if (filters.date) {
-        const filterDate = new Date(filters.date);
-        filterDate.setHours(0, 0, 0, 0);
-        tempFiltered = tempFiltered.filter(item => {
-            const itemDate = new Date(item.date);
-            itemDate.setHours(0, 0, 0, 0);
-            return itemDate.getTime() === filterDate.getTime();
-        });
-    }
-
-    // Filter by proximity
-    if (filters.proximity && currentLocation) {
-      tempFiltered = tempFiltered.filter(item => {
-        if (item.lat && item.lng) {
-          const distance = calculateDistance(currentLocation.lat, currentLocation.lng, item.lat, item.lng);
-          return distance <= filters.proximity!;
-        }
-        return false; // Exclude items without coords when proximity filter is on
-      });
-    }
-
-    // Simulate filtering delay
+    // Simulate filtering delay for UX
     setTimeout(() => {
+        let tempFiltered = [...allItems];
+
+        // Filter by keyword
+        if (filters.keyword) {
+          const lowerKeyword = filters.keyword.toLowerCase();
+          tempFiltered = tempFiltered.filter(item =>
+            item.title.toLowerCase().includes(lowerKeyword) ||
+            item.description.toLowerCase().includes(lowerKeyword) ||
+            item.location.toLowerCase().includes(lowerKeyword)
+          );
+        }
+
+        // Filter by date
+        if (filters.date) {
+            const filterDate = new Date(filters.date);
+            filterDate.setHours(0, 0, 0, 0); // Normalize filter date
+            tempFiltered = tempFiltered.filter(item => {
+                const itemDate = new Date(item.date);
+                itemDate.setHours(0, 0, 0, 0); // Normalize item date
+                return itemDate.getTime() === filterDate.getTime();
+            });
+        }
+
+        // Filter by proximity (only if location is available)
+        if (filters.proximity && currentLocation) {
+          tempFiltered = tempFiltered.filter(item => {
+            if (item.lat && item.lng) {
+              const distance = calculateDistance(currentLocation.lat, currentLocation.lng, item.lat, item.lng);
+              return distance <= filters.proximity!;
+            }
+            return false; // Exclude items without coords when proximity filter is active
+          });
+        } else if (filters.proximity && !currentLocation) {
+            // If proximity filter is set but location is not yet available, maybe show a message or handle appropriately
+             console.warn("Proximity filter applied without current location.");
+             // Optionally, you could prevent filtering or clear the proximity filter
+             // tempFiltered = []; // Or show no results if location is mandatory for proximity
+        }
+
         setFilteredItems(tempFiltered);
-        setIsLoading(false);
-    }, 300);
+        setIsLoading(false); // Hide loading state after filtering
+    }, 500); // Simulate filtering delay
   };
 
 
@@ -193,6 +203,7 @@ export default function ItemsPage() {
     setIsSubmitting(true);
     console.log("Submitting item:", values);
 
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const newItem: Item = {
@@ -204,25 +215,30 @@ export default function ItemsPage() {
       location: values.location,
       date: values.date,
       userId: user.uid,
+      // Use current location if available, otherwise undefined
       lat: currentLocation?.lat,
       lng: currentLocation?.lng,
     };
 
+    // Add the new item to the beginning of the list
     const updatedAllItems = [newItem, ...allItems];
     setAllItems(updatedAllItems);
+    // Re-apply current filters to include the new item if it matches
     applyFilters(activeFilters);
 
     setIsSubmitting(false);
-    setIsFormOpen(false);
+    setIsFormOpen(false); // Close dialog
     toast({ title: "Item Reported", description: "Your item has been successfully reported." });
   };
 
+  // Open report dialog, checking auth status
   const openReportDialog = () => {
       if (!user && !authLoading) {
           toast({ variant: "destructive", title: "Login Required", description: "Please log in to report an item." });
-      } else if (!authLoading) {
+      } else if (!authLoading) { // Only open if not loading and user exists or check passed
          setIsFormOpen(true);
       }
+      // Implicitly does nothing if authLoading is true
   }
 
    // Calculate items for the current page
@@ -230,23 +246,29 @@ export default function ItemsPage() {
    const endIndex = startIndex + ITEMS_PER_PAGE;
    const currentItems = filteredItems.slice(startIndex, endIndex);
 
+   // Handle pagination change
    const handlePageChange = (newPage: number) => {
      if (newPage >= 1 && newPage <= totalPages) {
        setCurrentPage(newPage);
-       window.scrollTo(0, 0);
+       window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top
      }
    };
 
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 min-h-screen"> {/* Ensure min height */}
         <h1 className="text-3xl font-bold mb-6 text-center md:text-left">Lost & Found Items</h1>
         <div className="mb-8 flex flex-col items-center justify-end gap-4 md:flex-row">
             {/* Reporting button */}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
-                    <Button onClick={openReportDialog} disabled={authLoading} className="w-full md:w-auto">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Report Item
+                    <Button onClick={openReportDialog} disabled={authLoading} className="w-full md:w-auto transition-colors">
+                        {authLoading ? (
+                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                           <PlusCircle className="mr-2 h-4 w-4" />
+                        )}
+                         Report Item
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] md:max-w-lg">
@@ -273,7 +295,7 @@ export default function ItemsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
-              <Card key={i} className="w-full">
+              <Card key={i} className="w-full animate-pulse">
                 <CardHeader className='p-0'>
                     <Skeleton className="h-48 w-full rounded-t-lg rounded-b-none" />
                 </CardHeader>
@@ -295,9 +317,13 @@ export default function ItemsPage() {
           </div>
         ) : (
            <>
-              <ItemList items={currentItems} />
-              {totalPages > 1 && (
-                 <div className="mt-8 flex justify-center">
+              {currentItems.length > 0 ? (
+                   <ItemList items={currentItems} />
+              ) : (
+                  <p className="text-center text-muted-foreground mt-12">No items match your current filters.</p>
+              )}
+             {totalPages > 1 && (
+                 <div className="mt-12 flex justify-center"> {/* Increased margin top */}
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
@@ -306,9 +332,10 @@ export default function ItemsPage() {
                             onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
                             aria-disabled={currentPage <= 1}
                             tabIndex={currentPage <= 1 ? -1 : undefined}
-                            className={
-                              currentPage <= 1 ? "pointer-events-none opacity-50" : undefined
-                            }
+                            className={cn(
+                              "transition-opacity",
+                              currentPage <= 1 ? "pointer-events-none opacity-50" : "hover:bg-accent"
+                            )}
                           />
                         </PaginationItem>
                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -317,6 +344,7 @@ export default function ItemsPage() {
                                 href="#"
                                 onClick={(e) => { e.preventDefault(); handlePageChange(page); }}
                                 isActive={currentPage === page}
+                                className="transition-colors"
                              >
                                 {page}
                              </PaginationLink>
@@ -328,9 +356,10 @@ export default function ItemsPage() {
                             onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
                             aria-disabled={currentPage >= totalPages}
                             tabIndex={currentPage >= totalPages ? -1 : undefined}
-                             className={
-                               currentPage >= totalPages ? "pointer-events-none opacity-50" : undefined
-                             }
+                             className={cn(
+                                "transition-opacity",
+                               currentPage >= totalPages ? "pointer-events-none opacity-50" : "hover:bg-accent"
+                             )}
                           />
                         </PaginationItem>
                       </PaginationContent>

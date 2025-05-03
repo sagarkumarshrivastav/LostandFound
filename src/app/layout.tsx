@@ -15,7 +15,7 @@ const inter = Inter({
 
 
 export const metadata: Metadata = {
-  title: 'Lost & Found', // Updated Title
+  title: 'FindIt Local', // Updated Title based on recent changes
   description: 'Platform for reporting and finding lost items locally.',
 };
 
@@ -26,8 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* Use Inter font variable */}
-      <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground`}>
+      <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground overflow-x-hidden`}> {/* Removed extra space before body, added overflow-x-hidden */}
          <ThemeProvider
           attribute="class"
           defaultTheme="dark" // Set default theme to dark
@@ -36,7 +35,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <Header />
-            <main className="flex-grow"> {/* Removed background/text classes, handled by body/theme */}
+            <main className="flex-grow">
               {children}
             </main>
             <Footer />

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Import Card for Skeleton structure
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"; // Import Pagination
+import { cn } from '@/lib/utils'; // Import cn for conditional classes
 
 // --- Mock Data Fetching ---
 // Replace this with actual API calls later
@@ -106,10 +107,13 @@ export default function DashboardPage() {
 
   // Update total pages if userItems changes (e.g., after deleting an item - future feature)
   useEffect(() => {
-    setTotalPages(Math.ceil(userItems.length / ITEMS_PER_PAGE));
+    const newTotalPages = Math.ceil(userItems.length / ITEMS_PER_PAGE);
+    setTotalPages(newTotalPages);
     // Reset to page 1 if the current page becomes invalid
-    if (currentPage > Math.ceil(userItems.length / ITEMS_PER_PAGE)) {
+    if (currentPage > newTotalPages && newTotalPages > 0) {
       setCurrentPage(1);
+    } else if (newTotalPages === 0) {
+        setCurrentPage(1); // Or 0 if you prefer
     }
   }, [userItems, currentPage]);
 
@@ -119,10 +123,11 @@ export default function DashboardPage() {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentUserItemsPage = userItems.slice(startIndex, endIndex);
 
+  // Handle pagination change
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-       window.scrollTo(0, 0); // Scroll to top on page change
+       window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top on page change
     }
   };
 
@@ -141,7 +146,7 @@ export default function DashboardPage() {
            </div>
            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(ITEMS_PER_PAGE)].map((_, i) => ( // Show skeletons for one page
-              <Card key={i} className="w-full">
+              <Card key={i} className="w-full animate-pulse"> {/* Added pulse animation */}
                  <CardHeader className='p-0'>
                     <Skeleton className="h-48 w-full rounded-t-lg rounded-b-none" />
                  </CardHeader>
@@ -171,7 +176,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 min-h-screen"> {/* Ensure min height */}
       <h1 className="text-3xl font-bold mb-6">My Dashboard</h1>
 
       <div className="mb-8 p-4 border rounded-lg bg-card shadow-sm">
@@ -187,7 +192,7 @@ export default function DashboardPage() {
           <>
             <ItemList items={currentUserItemsPage} />
              {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
+                <div className="mt-12 flex justify-center"> {/* Increased margin top */}
                    <Pagination>
                      <PaginationContent>
                        <PaginationItem>
@@ -196,9 +201,10 @@ export default function DashboardPage() {
                            onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
                            aria-disabled={currentPage <= 1}
                            tabIndex={currentPage <= 1 ? -1 : undefined}
-                           className={
-                             currentPage <= 1 ? "pointer-events-none opacity-50" : undefined
-                           }
+                           className={cn(
+                              "transition-opacity",
+                             currentPage <= 1 ? "pointer-events-none opacity-50" : "hover:bg-accent"
+                           )}
                          />
                        </PaginationItem>
                        {/* Simplified Pagination Links */}
@@ -208,6 +214,7 @@ export default function DashboardPage() {
                               href="#"
                               onClick={(e) => { e.preventDefault(); handlePageChange(page); }}
                               isActive={currentPage === page}
+                              className="transition-colors" // Add transition
                            >
                               {page}
                            </PaginationLink>
@@ -219,9 +226,10 @@ export default function DashboardPage() {
                            onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
                            aria-disabled={currentPage >= totalPages}
                            tabIndex={currentPage >= totalPages ? -1 : undefined}
-                            className={
-                              currentPage >= totalPages ? "pointer-events-none opacity-50" : undefined
-                            }
+                            className={cn(
+                              "transition-opacity",
+                              currentPage >= totalPages ? "pointer-events-none opacity-50" : "hover:bg-accent"
+                            )}
                          />
                        </PaginationItem>
                      </PaginationContent>
@@ -230,7 +238,7 @@ export default function DashboardPage() {
              )}
           </>
         ) : (
-          <p className="text-muted-foreground">You haven't reported any items yet.</p>
+          <p className="text-center text-muted-foreground mt-12">You haven't reported any items yet.</p>
         )}
       </section>
 
@@ -243,4 +251,4 @@ export default function DashboardPage() {
   );
 }
 
-    
+

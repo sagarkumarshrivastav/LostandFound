@@ -1,10 +1,11 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Upload } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, Loader2 } from "lucide-react"; // Added Loader2
 
 import { Button } from "@/components/ui/button";
 import {
@@ -104,7 +105,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
           render={({ field }) => (
             <FormItem>
               <FormLabel>Item Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select if the item is lost or found" />
@@ -126,7 +127,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Black Wallet" {...field} />
+                <Input placeholder="e.g., Black Wallet" {...field} disabled={isSubmitting} />
               </FormControl>
               <FormDescription>
                 A short, descriptive title.
@@ -147,6 +148,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
                   className="resize-none"
                   {...field}
                   rows={4}
+                  disabled={isSubmitting}
                 />
               </FormControl>
                <FormDescription>
@@ -163,7 +165,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
             <FormItem>
               <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Central Park, near the fountain" {...field} />
+                <Input placeholder="e.g., Central Park, near the fountain" {...field} disabled={isSubmitting} />
               </FormControl>
               <FormDescription>
                 Where was the item lost or found?
@@ -187,6 +189,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
                         "w-full pl-3 text-left font-normal",
                         !field.value && "text-muted-foreground"
                       )}
+                      disabled={isSubmitting}
                     >
                       {field.value ? (
                         format(field.value, "PPP")
@@ -203,7 +206,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
+                      date > new Date() || date < new Date("1900-01-01") || isSubmitting
                     }
                     initialFocus
                   />
@@ -222,7 +225,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
               <FormLabel>Image (Optional)</FormLabel>
               <FormControl>
                 <div className="flex items-center gap-4">
-                   <Button type="button" variant="outline" className="relative">
+                   <Button type="button" variant="outline" className="relative" disabled={isSubmitting}>
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Image
                     <Input
@@ -230,6 +233,7 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
                       accept="image/*"
                       className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                       onChange={handleImageChange}
+                      disabled={isSubmitting}
                     />
                   </Button>
                   {previewUrl && (
@@ -245,7 +249,8 @@ export function ItemForm({ onSubmit, defaultValues, isSubmitting = false }: Item
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90">
+        <Button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 transition-all duration-300 ease-in-out">
+           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
            {isSubmitting ? 'Submitting...' : 'Submit Item'}
         </Button>
       </form>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Search, SlidersHorizontal, LocateFixed } from "lucide-react";
+import { Calendar as CalendarIcon, Search, SlidersHorizontal, LocateFixed, Loader2 } from "lucide-react"; // Added Loader2
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Label } from './ui/label';
@@ -45,7 +46,7 @@ export function SearchFilterBar({ onSearch, isSearchingLocation, onGetCurrentLoc
   }
 
   return (
-    <div className="mb-6 rounded-lg border bg-card p-4 shadow-sm">
+    <div className="mb-6 rounded-lg border bg-card p-4 shadow-sm transition-all duration-300">
       <div className="flex flex-col gap-4 md:flex-row md:items-end">
         {/* Search Input */}
         <div className="flex-grow">
@@ -130,23 +131,27 @@ export function SearchFilterBar({ onSearch, isSearchingLocation, onGetCurrentLoc
                     size="sm"
                     onClick={onGetCurrentLocation}
                     disabled={isSearchingLocation}
-                    className="mt-2"
+                    className="mt-2 transition-all duration-300"
                  >
-                    <LocateFixed className="mr-2 h-4 w-4" />
+                    {isSearchingLocation ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <LocateFixed className="mr-2 h-4 w-4" />
+                    )}
                     {isSearchingLocation ? 'Getting Location...' : 'Use Current Location'}
                   </Button>
                 </div>
               </div>
                <div className="flex justify-end gap-2 pt-4">
                  <Button variant="ghost" size="sm" onClick={handleResetFilters}>Reset</Button>
-                 <Button size="sm" onClick={handleSearch} className="bg-primary hover:bg-primary/90">Apply Filters</Button>
+                 <Button size="sm" onClick={handleSearch} className="bg-primary hover:bg-primary/90 transition-colors">Apply Filters</Button>
                </div>
             </div>
           </PopoverContent>
         </Popover>
 
         {/* Search Button */}
-        <Button onClick={handleSearch} className="w-full bg-primary hover:bg-primary/90 md:w-auto">
+        <Button onClick={handleSearch} className="w-full bg-primary hover:bg-primary/90 md:w-auto transition-colors">
           Search
         </Button>
       </div>
