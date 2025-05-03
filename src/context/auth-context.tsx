@@ -33,48 +33,52 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start loading until auth state is confirmed
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false); // Track if auth instance initialization attempt finished
 
-  // Initialize auth instance on mount
+  // Attempt to initialize auth instance on mount
   useEffect(() => {
+    console.log("Attempting to initialize Firebase Auth instance...");
     const instance = getFirebaseAuth();
-    setAuthInstance(instance);
-    setAuthInitialized(true); // Mark initialization attempt as complete
-     if (!instance) {
-        console.error("Failed to initialize Firebase Auth instance. Check Firebase config and environment variables.");
-        setLoading(false); // Stop loading if initialization failed immediately
-     }
-  }, []);
+    if (instance) {
+        console.log("Firebase Auth instance obtained successfully.");
+        setAuthInstance(instance);
+        setAuthInitialized(true); // Mark initialization as successful
+    } else {
+        console.error("Failed to get Firebase Auth instance from getFirebaseAuth(). Check Firebase config (API Key, etc.) and initialization logs in firebase.ts.");
+        setAuthInitialized(true); // Mark attempt as complete, even if failed
+        setLoading(false); // Stop loading if auth instance is definitively unavailable
+    }
+  }, []); // Run only once on mount
 
+  // Set up the auth state listener once the instance is potentially available
   useEffect(() => {
     // Only proceed if the initialization attempt is complete
     if (!authInitialized) {
+        console.log("Auth initialization not yet attempted, skipping listener setup.");
         return;
     }
 
     if (!authInstance) {
-      // If authInstance is still null after initialization attempt, log error and keep loading potentially or set loading false based on desired UX.
-      // Setting loading to false here might cause UI to render without auth capabilities.
-      // Keeping loading true might hang loading indicators if firebase never initializes.
-      // We already set loading to false in the initialization effect if instance is null.
-      console.error("Auth instance is not available, cannot set up listener.");
-      // setLoading(false); // Explicitly ensure loading is false if auth setup fails
+      // This confirms that the first effect failed to set a valid instance
+      console.error("Auth instance is not available after initialization attempt. Cannot set up auth state listener. Check previous errors.");
+      // Loading state should have been set to false in the first effect if instance was null
       return;
     }
 
-    console.log("Setting up Firebase Auth listener...");
-    setLoading(true); // Ensure loading is true while listener is being set up
+    console.log("Auth instance available, setting up Firebase Auth listener...");
+    // setLoading(true); // No need to set loading true here, it starts true
+
     const unsubscribe = onAuthStateChanged(authInstance, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
+      setLoading(false); // Auth state confirmed, stop loading
       console.log("Auth state changed, user:", currentUser?.email ?? 'logged out');
     }, (error) => {
         // Handle errors during listener setup/execution
         console.error("Error in onAuthStateChanged listener:", error);
         setUser(null); // Assume logged out on error
-        setLoading(false);
+        setLoading(false); // Stop loading on error
     });
 
     // Cleanup subscription on unmount
@@ -82,25 +86,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log("Cleaning up Firebase Auth listener.");
         unsubscribe();
     }
-  }, [authInstance, authInitialized]); // Rerun effect if authInstance or initialization status changes
+    // Rerun effect ONLY if authInstance changes (which shouldn't happen after initial setup)
+    // Or if authInitialized becomes true AND authInstance is valid
+  }, [authInstance, authInitialized]);
 
   const login = (email: string, pass: string) => {
-    if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+    if (!authInstance) {
+        console.error("Login failed: Auth not initialized");
+        return Promise.reject(new Error("Auth not initialized"));
+    }
     return signInWithEmailAndPassword(authInstance, email, pass);
   };
 
   const signup = (email: string, pass: string) => {
-     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+     if (!authInstance) {
+        console.error("Signup failed: Auth not initialized");
+        return Promise.reject(new Error("Auth not initialized"));
+     }
     return createUserWithEmailAndPassword(authInstance, email, pass);
   };
 
   const logout = () => {
-     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+     if (!authInstance) {
+        console.error("Logout failed: Auth not initialized");
+        return Promise.reject(new Error("Auth not initialized"));
+     }
     return signOut(authInstance);
   };
 
   const loginWithGoogle = () => {
-     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+     if (!authInstance) {
+        console.error("Google login failed: Auth not initialized");
+        return Promise.reject(new Error("Auth not initialized"));
+     }
     const provider = new GoogleAuthProvider();
     return signInWithPopup(authInstance, provider);
   };
