@@ -29,8 +29,8 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased flex flex-col min-h-screen bg-background text-foreground overflow-x-hidden`}>
          <ThemeProvider
           attribute="class"
-          defaultTheme="light" // Set default theme to light
-          enableSystem={false} // Disable system preference
+          defaultTheme="light" // Ensure default theme is light
+          enableSystem={false} // Explicitly disable system preference if default is set
           disableTransitionOnChange
         >
           <AuthProvider>
