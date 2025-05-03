@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
       )}
 
       <p>
-        FindIt Local ("us", "we", or "our") operates the FindIt Local website (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
+        Lost & Found ("us", "we", or "our") operates the Lost & Found website (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
       </p>
 
       <h2>1. Information Collection and Use</h2>
@@ -59,7 +59,7 @@ export default function PrivacyPolicyPage() {
       </p>
 
       <h2>2. Use of Data</h2>
-      <p>FindIt Local uses the collected data for various purposes:</p>
+      <p>Lost & Found uses the collected data for various purposes:</p>
       <ul>
         <li>To provide and maintain the Service</li>
         <li>To allow you to participate in interactive features of our Service when you choose to do so (e.g., messaging)</li>
@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
        <p>We may disclose your Personal Data in the good faith belief that such action is necessary to:</p>
         <ul>
             <li>Comply with a legal obligation</li>
-            <li>Protect and defend the rights or property of FindIt Local</li>
+            <li>Protect and defend the rights or property of Lost & Found</li>
             <li>Prevent or investigate possible wrongdoing in connection with the Service</li>
             <li>Protect the personal safety of users of the Service or the public</li>
             <li>Protect against legal liability</li>
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>6. Your Data Protection Rights</h2>
       <p>
-        Depending on your location, you may have certain data protection rights. FindIt Local aims to take reasonable steps to allow you to correct, amend, delete, or limit the use of your Personal Data. You can usually manage your account information through your dashboard settings. If you wish to be informed about what Personal Data we hold about you and if you want it to be removed from our systems, please contact us.
+        Depending on your location, you may have certain data protection rights. Lost & Found aims to take reasonable steps to allow you to correct, amend, delete, or limit the use of your Personal Data. You can usually manage your account information through your dashboard settings. If you wish to be informed about what Personal Data we hold about you and if you want it to be removed from our systems, please contact us.
       </p>
 
       <h2>7. Children's Privacy</h2>

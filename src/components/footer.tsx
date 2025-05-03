@@ -12,7 +12,7 @@ export function Footer() {
           <div className="space-y-3">
              <Link href="/" className="flex items-center space-x-2 group w-fit"> {/* Added group and w-fit */}
                  <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" />
-                 <h3 className="text-lg font-semibold text-foreground">FindIt Local</h3>
+                 <h3 className="text-lg font-semibold text-foreground">Lost & Found</h3> {/* Updated Brand Name */}
              </Link>
             <p className="text-sm text-muted-foreground">
               Connecting communities by helping reunite people with their lost belongings. Report or find items easily and securely.
@@ -61,7 +61,7 @@ export function Footer() {
               United States
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Email: <a href="mailto:info@finditlocal.com" className="hover:text-primary transition-colors duration-200">info@finditlocal.com</a>
+              Email: <a href="mailto:info@lostandfound.com" className="hover:text-primary transition-colors duration-200">info@lostandfound.com</a> {/* Updated Email */}
             </p>
           </div>
         </div>
@@ -69,7 +69,7 @@ export function Footer() {
         <Separator className="bg-border my-6" />
 
         <div className="text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} FindIt Local. All rights reserved.
+          &copy; {new Date().getFullYear()} Lost & Found. All rights reserved. {/* Updated Copyright */}
         </div>
       </div>
     </footer>

@@ -153,8 +153,8 @@ export default function ContactPage() {
                   <Mail className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold">Email</h4>
-                    <a href="mailto:support@finditlocal.com" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                      support@finditlocal.com
+                    <a href="mailto:support@lostandfound.com" className="text-muted-foreground hover:text-primary transition-colors text-sm">
+                      support@lostandfound.com {/* Updated Email */}
                     </a>
                      <p className="text-xs text-muted-foreground/80">For support inquiries</p>
                   </div>
@@ -163,8 +163,8 @@ export default function ContactPage() {
                    <Mail className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                    <div>
                      <h4 className="font-semibold">General Inquiries</h4>
-                     <a href="mailto:info@finditlocal.com" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                       info@finditlocal.com
+                     <a href="mailto:info@lostandfound.com" className="text-muted-foreground hover:text-primary transition-colors text-sm">
+                       info@lostandfound.com {/* Updated Email */}
                      </a>
                      <p className="text-xs text-muted-foreground/80">For partnerships and general info</p>
                    </div>

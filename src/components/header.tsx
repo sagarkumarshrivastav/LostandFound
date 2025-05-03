@@ -82,7 +82,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2 group"> {/* Added group */}
           <RefreshCcw className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-[-45deg]" /> {/* Added transition */}
-          <span className="font-bold text-xl text-foreground">FindIt Local</span> {/* Updated Brand Name */}
+          <span className="font-bold text-xl text-foreground">Lost & Found</span> {/* Updated Brand Name */}
         </Link>
 
         <nav className="hidden items-center space-x-6 md:flex">

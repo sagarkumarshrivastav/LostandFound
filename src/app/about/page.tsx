@@ -6,11 +6,11 @@ export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-primary">
-        About FindIt Local
+        About Lost & Found
       </h1>
 
       <p className="text-lg text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
-        FindIt Local is dedicated to helping communities reconnect lost items with their rightful owners. We believe that a small act of kindness, like returning a lost item, can make a big difference.
+        Lost & Found is dedicated to helping communities reconnect lost items with their rightful owners. We believe that a small act of kindness, like returning a lost item, can make a big difference.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -55,7 +55,7 @@ export default function AboutPage() {
       <div className="text-center">
          <h2 className="text-2xl font-semibold mb-4">Join Our Community</h2>
          <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-            Whether you've lost something valuable or found an item that needs returning, FindIt Local is here to help. Sign up today and become part of a network of helpful neighbors.
+            Whether you've lost something valuable or found an item that needs returning, Lost & Found is here to help. Sign up today and become part of a network of helpful neighbors.
          </p>
          {/* Optional: Add a link/button to signup */}
          {/* <Button asChild><Link href="/signup">Get Started</Link></Button> */}

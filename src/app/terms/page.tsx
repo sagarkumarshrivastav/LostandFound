@@ -20,17 +20,17 @@ export default function TermsPage() {
 
       <h2>1. Acceptance of Terms</h2>
       <p>
-        By accessing or using the FindIt Local platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of the terms, then you may not access the Service.
+        By accessing or using the Lost & Found platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of the terms, then you may not access the Service.
       </p>
 
       <h2>2. Description of Service</h2>
       <p>
-        FindIt Local provides a platform for users to report lost items and search for found items within their local community. The Service includes features for posting item details, searching listings, and communicating with other users regarding listed items.
+        Lost & Found provides a platform for users to report lost items and search for found items within their local community. The Service includes features for posting item details, searching listings, and communicating with other users regarding listed items.
       </p>
 
       <h2>3. User Accounts</h2>
       <p>
-        To access certain features of the Service, you must register for an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete. You are responsible for safeguarding your password and for any activities or actions under your account. FindIt Local cannot and will not be liable for any loss or damage arising from your failure to comply with this security obligation.
+        To access certain features of the Service, you must register for an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete. You are responsible for safeguarding your password and for any activities or actions under your account. Lost & Found cannot and will not be liable for any loss or damage arising from your failure to comply with this security obligation.
       </p>
 
       <h2>4. User Conduct</h2>
@@ -43,32 +43,32 @@ export default function TermsPage() {
         <li>Interfere with or disrupt the Service or servers or networks connected to the Service.</li>
         <li>Attempt to gain unauthorized access to the Service, other accounts, computer systems, or networks connected to the Service.</li>
       </ul>
-        <p>FindIt Local reserves the right to remove content and terminate accounts for users who violate these terms.</p>
+        <p>Lost & Found reserves the right to remove content and terminate accounts for users who violate these terms.</p>
 
 
       <h2>5. Content Ownership and Responsibility</h2>
       <p>
-        You retain ownership of the content you post on the Service (text, images, etc.). However, by posting content, you grant FindIt Local a worldwide, non-exclusive, royalty-free license to use, reproduce, adapt, publish, translate, and distribute your content in connection with operating and promoting the Service. You are solely responsible for the content you post and the consequences of posting it.
+        You retain ownership of the content you post on the Service (text, images, etc.). However, by posting content, you grant Lost & Found a worldwide, non-exclusive, royalty-free license to use, reproduce, adapt, publish, translate, and distribute your content in connection with operating and promoting the Service. You are solely responsible for the content you post and the consequences of posting it.
       </p>
 
        <h2>6. Item Recovery and Disputes</h2>
         <p>
-            FindIt Local acts solely as a platform to facilitate connections between users regarding lost and found items. We are not involved in the actual exchange or verification of items. We do not guarantee the return of any lost item or the authenticity of any found item listing. Any disputes regarding ownership or the condition of an item must be resolved directly between the users involved. FindIt Local is not responsible for any loss, theft, damage, or disputes arising from interactions facilitated by the Service. Users are encouraged to exercise caution and good judgment when arranging to meet or exchange items.
+            Lost & Found acts solely as a platform to facilitate connections between users regarding lost and found items. We are not involved in the actual exchange or verification of items. We do not guarantee the return of any lost item or the authenticity of any found item listing. Any disputes regarding ownership or the condition of an item must be resolved directly between the users involved. Lost & Found is not responsible for any loss, theft, damage, or disputes arising from interactions facilitated by the Service. Users are encouraged to exercise caution and good judgment when arranging to meet or exchange items.
         </p>
 
       <h2>7. Disclaimers</h2>
       <p>
-        The Service is provided on an "AS IS" and "AS AVAILABLE" basis. FindIt Local expressly disclaims all warranties of any kind, whether express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. FindIt Local makes no warranty that the Service will meet your requirements, be uninterrupted, timely, secure, or error-free.
+        The Service is provided on an "AS IS" and "AS AVAILABLE" basis. Lost & Found expressly disclaims all warranties of any kind, whether express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. Lost & Found makes no warranty that the Service will meet your requirements, be uninterrupted, timely, secure, or error-free.
       </p>
 
       <h2>8. Limitation of Liability</h2>
       <p>
-        You expressly understand and agree that FindIt Local shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses (even if FindIt Local has been advised of the possibility of such damages), resulting from the use or the inability to use the Service.
+        You expressly understand and agree that Lost & Found shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses (even if Lost & Found has been advised of the possibility of such damages), resulting from the use or the inability to use the Service.
       </p>
 
       <h2>9. Modifications to Terms</h2>
       <p>
-        FindIt Local reserves the right, at its sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
+        Lost & Found reserves the right, at its sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
       </p>
 
       <h2>10. Governing Law</h2>

@@ -15,7 +15,7 @@ const inter = Inter({
 
 
 export const metadata: Metadata = {
-  title: 'FindIt Local', // Updated Title based on recent changes
+  title: 'Lost & Found', // Updated Title
   description: 'Platform for reporting and finding lost items locally.',
 };
 

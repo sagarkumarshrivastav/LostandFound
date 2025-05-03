@@ -65,7 +65,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         toast({ title: "Login Successful", description: "Welcome back!" });
       } else {
         await signup(values.email, (values as SignupFormValues).password);
-        toast({ title: "Signup Successful", description: "Welcome to FindIt Local!" });
+        toast({ title: "Signup Successful", description: "Welcome to Lost & Found!" }); // Updated welcome message
       }
       onSuccess?.(); // Call success callback if provided
     } catch (error: any) {
