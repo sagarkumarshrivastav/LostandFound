@@ -35,29 +35,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false); // Track if auth instance initialization attempt finished
 
   // Initialize auth instance on mount
   useEffect(() => {
     const instance = getFirebaseAuth();
     setAuthInstance(instance);
+    setAuthInitialized(true); // Mark initialization attempt as complete
+     if (!instance) {
+        console.error("Failed to initialize Firebase Auth instance. Check Firebase config and environment variables.");
+        setLoading(false); // Stop loading if initialization failed immediately
+     }
   }, []);
 
   useEffect(() => {
+    // Only proceed if the initialization attempt is complete
+    if (!authInitialized) {
+        return;
+    }
+
     if (!authInstance) {
-      setLoading(false); // If auth instance couldn't be created, stop loading
-      console.error("Auth instance is not available.");
+      // If authInstance is still null after initialization attempt, log error and keep loading potentially or set loading false based on desired UX.
+      // Setting loading to false here might cause UI to render without auth capabilities.
+      // Keeping loading true might hang loading indicators if firebase never initializes.
+      // We already set loading to false in the initialization effect if instance is null.
+      console.error("Auth instance is not available, cannot set up listener.");
+      // setLoading(false); // Explicitly ensure loading is false if auth setup fails
       return;
     }
 
+    console.log("Setting up Firebase Auth listener...");
+    setLoading(true); // Ensure loading is true while listener is being set up
     const unsubscribe = onAuthStateChanged(authInstance, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-      console.log("Auth state changed, user:", currentUser?.email);
+      console.log("Auth state changed, user:", currentUser?.email ?? 'logged out');
+    }, (error) => {
+        // Handle errors during listener setup/execution
+        console.error("Error in onAuthStateChanged listener:", error);
+        setUser(null); // Assume logged out on error
+        setLoading(false);
     });
 
     // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [authInstance]); // Rerun effect if authInstance changes
+    return () => {
+        console.log("Cleaning up Firebase Auth listener.");
+        unsubscribe();
+    }
+  }, [authInstance, authInitialized]); // Rerun effect if authInstance or initialization status changes
 
   const login = (email: string, pass: string) => {
     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
@@ -94,8 +119,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Render children only after initial loading is complete */}
-      {/* We can show a global loader here if needed, but for now, let components handle their loading state */}
+      {/* Render children. Components should handle the loading state internally. */}
       {children}
     </AuthContext.Provider>
   );
