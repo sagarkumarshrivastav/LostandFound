@@ -34,9 +34,9 @@ app.get('/', (req, res) => res.send('API Running'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/items', require('./routes/itemRoutes'));
-// Add message routes later if needed: app.use('/api/messages', require('./routes/messageRoutes'));
+// Add message routes later: app.use('/api/messages', require('./routes/messageRoutes')); // Example for future message routes
 
-// Error Handling Middleware
+// Error Handling Middleware (Should be last)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
@@ -62,7 +62,6 @@ io.on('connection', (socket) => {
   // Add more event listeners for chat functionality here
   // e.g., socket.on('sendMessage', (messageData) => { ... });
 });
-
 
 server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
