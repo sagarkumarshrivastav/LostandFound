@@ -1,9 +1,22 @@
 
+"use client"; // Add this directive
+
+import { useState, useEffect } from 'react';
+
 export default function PrivacyPolicyPage() {
+  const [lastUpdatedDate, setLastUpdatedDate] = useState('');
+
+  useEffect(() => {
+    // Set the date only on the client side after hydration
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []); // Empty dependency array ensures this runs once on mount
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 prose dark:prose-invert max-w-4xl">
       <h1 className="text-3xl md:text-4xl font-bold text-primary mb-6">Privacy Policy</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+      {lastUpdatedDate && ( // Render only when date is set
+        <p className="text-sm text-muted-foreground mb-8">Last updated: {lastUpdatedDate}</p>
+      )}
 
       <p>
         FindIt Local ("us", "we", or "our") operates the FindIt Local website (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.

@@ -1,9 +1,22 @@
 
+"use client"; // Add this directive
+
+import { useState, useEffect } from 'react';
+
 export default function TermsPage() {
+ const [lastUpdatedDate, setLastUpdatedDate] = useState('');
+
+  useEffect(() => {
+    // Set the date only on the client side after hydration
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []); // Empty dependency array ensures this runs once on mount
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 prose dark:prose-invert max-w-4xl">
       <h1 className="text-3xl md:text-4xl font-bold text-primary mb-6">Terms of Service</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+       {lastUpdatedDate && ( // Render only when date is set
+        <p className="text-sm text-muted-foreground mb-8">Last updated: {lastUpdatedDate}</p>
+       )}
 
       <h2>1. Acceptance of Terms</h2>
       <p>

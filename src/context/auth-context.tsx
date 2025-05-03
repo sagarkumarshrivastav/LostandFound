@@ -4,7 +4,6 @@
 import type { ReactNode } from 'react';
 import { createContext, useState, useEffect, useMemo } from 'react';
 import {
-  getAuth,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -14,7 +13,7 @@ import {
   type User,
   type Auth,
 } from 'firebase/auth';
-import { app } from '@/lib/firebase'; // Import initialized Firebase app
+import { getFirebaseAuth } from '@/lib/firebase'; // Import function to get auth instance
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +22,7 @@ interface AuthContextType {
   signup: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<any>;
+  authInstance: Auth | null; // Expose the auth instance
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,10 +34,22 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const auth: Auth = getAuth(app); // Get auth instance
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+
+  // Initialize auth instance on mount
+  useEffect(() => {
+    const instance = getFirebaseAuth();
+    setAuthInstance(instance);
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    if (!authInstance) {
+      setLoading(false); // If auth instance couldn't be created, stop loading
+      console.error("Auth instance is not available.");
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(authInstance, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
       console.log("Auth state changed, user:", currentUser?.email);
@@ -45,23 +57,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [auth]);
+  }, [authInstance]); // Rerun effect if authInstance changes
 
   const login = (email: string, pass: string) => {
-    return signInWithEmailAndPassword(auth, email, pass);
+    if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+    return signInWithEmailAndPassword(authInstance, email, pass);
   };
 
   const signup = (email: string, pass: string) => {
-    return createUserWithEmailAndPassword(auth, email, pass);
+     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+    return createUserWithEmailAndPassword(authInstance, email, pass);
   };
 
   const logout = () => {
-    return signOut(auth);
+     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
+    return signOut(authInstance);
   };
 
   const loginWithGoogle = () => {
+     if (!authInstance) return Promise.reject(new Error("Auth not initialized"));
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+    return signInWithPopup(authInstance, provider);
   };
 
   // Memoize the context value to prevent unnecessary re-renders
@@ -72,7 +88,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signup,
       logout,
       loginWithGoogle,
-    }), [user, loading]); // Dependencies: user and loading state
+      authInstance, // Provide authInstance
+    }), [user, loading, authInstance]); // Dependencies: user, loading state, and authInstance
 
 
   return (
