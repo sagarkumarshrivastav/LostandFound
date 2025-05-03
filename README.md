@@ -1,4 +1,4 @@
-# Lost & Found Application
+ .# Lost & Found Application
 
 This is a Next.js application designed to help users report and find lost or found items within a community. It features user authentication, item reporting, search/filtering, and user messaging.
 
