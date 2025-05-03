@@ -29,9 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning> {/* Add suppressHydrationWarning */}
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
-         <ThemeProvider // Wrap with ThemeProvider
+         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
@@ -39,10 +39,10 @@ export default function RootLayout({
         >
           <AuthProvider>
             <Header />
-            <main className="flex-grow bg-background text-foreground"> {/* Apply bg/text here */}
+            <main className="flex-grow bg-background text-foreground">
               {children}
             </main>
-            <Footer /> {/* Add Footer component */}
+            <Footer />
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
