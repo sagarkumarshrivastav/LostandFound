@@ -16,6 +16,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Correct
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth hook
 import { useToast } from '@/hooks/use-toast'; // Import useToast hook
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"; // Import Pagination
+import { cn } from '@/lib/utils'; // Import cn utility function
 
 // --- Mock Data (Keep or fetch from API) ---
 const generateMockItems = (count: number): Item[] => {
