@@ -5,7 +5,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
+import { Footer } from '@/components/footer'; // Import Footer
 import { ThemeProvider } from "@/components/theme-provider"; // Import ThemeProvider
 
 const geistSans = Geist({
@@ -42,7 +42,7 @@ export default function RootLayout({
             <main className="flex-grow bg-background text-foreground"> {/* Apply bg/text here */}
               {children}
             </main>
-            <Footer />
+            <Footer /> {/* Add Footer component */}
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
