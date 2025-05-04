@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -70,7 +69,7 @@ export default function ItemsPage() {
 
      } catch (error: any) {
        console.error('Error fetching items:', error);
-       toast({ variant: 'destructive', title: 'Error Fetching Items', description: error.response?.data?.msg || 'Could not load items.' });
+       toast({ variant: 'destructive', title: 'Error Fetching Items', description: error.message || error.response?.data?.msg || 'Could not load items.' });
        setItems([]); // Clear items on error
        setTotalPages(1);
        setCurrentPage(1);
