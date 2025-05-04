@@ -1,6 +1,5 @@
-// Load environment variables FIRST
-// Explicitly specify the path relative to the current file
-require('dotenv').config({ path: require('path').resolve(__dirname, './.env') });
+
+// Environment variables are now loaded via `node -r dotenv/config` in package.json scripts
 
 
 const express = require('express');
@@ -53,15 +52,26 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
+  // Check if critical environment variables are loaded (optional but good practice)
   if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not defined in the environment variables!');
+      console.error('CRITICAL ERROR: JWT_SECRET is not defined. Check your .env file and server start command.');
+      // Optionally exit if JWT_SECRET is missing, as it's crucial for auth
+      // process.exit(1);
   }
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        console.error("Error: Missing Google Client ID or Secret in environment variables.");
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      console.warn("Warning: Missing Google Client ID or Secret. Google OAuth login will not work.");
+  }
+   if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.warn("Warning: Missing Cloudinary credentials. Image uploads will not work.");
+   }
+    if (!process.env.MONGODB_URI) {
+        console.error('CRITICAL ERROR: MONGODB_URI is not defined. Cannot connect to database.');
+        // process.exit(1);
     }
 
-  // Configure Passport
-  configurePassport(passport); // This should now have access to loaded env vars
+
+  // Configure Passport - ensure this happens after env vars are loaded
+  configurePassport(passport);
 
 
   // Define Routes
