@@ -1,15 +1,23 @@
 
 const errorHandler = (err, req, res, next) => {
-  console.error('Unhandled Error:', err.stack || err);
+  // Log the full error object for detailed debugging
+  console.error('--- Unhandled Error ---');
+  console.error('Timestamp:', new Date().toISOString());
+  console.error('Request URL:', req.originalUrl);
+  console.error('Request Method:', req.method);
+  // console.error('Request Body:', req.body); // Be cautious logging body in production
+  console.error('Error Object:', err); // Log the full error object
+  // console.error('Error Stack:', err.stack); // Stack trace is often included in err object log
+  console.error('--- End Unhandled Error ---');
 
   // Default error status and message
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  let message = 'Server Error';
+  let statusCode = err.statusCode || 500; // Use error's status code if available
+  let message = err.message || 'Internal Server Error';
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     statusCode = 404;
-    message = 'Resource not found (Invalid ID)';
+    message = `Resource not found with id of ${err.value}`;
   }
 
   // Mongoose validation error
@@ -23,28 +31,38 @@ const errorHandler = (err, req, res, next) => {
    if (err.code === 11000) {
      statusCode = 400;
      const field = Object.keys(err.keyValue)[0];
-     message = `Duplicate field value entered for ${field}. Please use another value.`;
+     const value = err.keyValue[field];
+     message = `Duplicate field value entered: '${value}' for field '${field}'. Please use another value.`;
    }
 
    // JWT errors (can also be handled in authMiddleware, but good fallback)
    if (err.name === 'JsonWebTokenError') {
      statusCode = 401;
-     message = 'Not authorized, token failed';
+     message = 'Not authorized, token failed verification';
    }
    if (err.name === 'TokenExpiredError') {
       statusCode = 401;
       message = 'Not authorized, token expired';
     }
 
-  // Check if headers have already been sent
+  // Custom error messages passed via Error object
+  // (e.g., new Error('Token signing failed'))
+   if (statusCode === 500 && err.message && err.message !== 'Internal Server Error') {
+      message = err.message; // Use the custom message from the error object
+   }
+
+
+  // Check if headers have already been sent (prevents error 'ERR_HTTP_HEADERS_SENT')
   if (res.headersSent) {
-    return next(err);
+    console.warn("Headers already sent, skipping error response.");
+    return next(err); // Pass error to default Express handler if headers sent
   }
 
   res.status(statusCode).json({
+    success: false, // Add a success flag for consistency
     message: message,
-    // Optionally include stack trace in development mode
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    // Optionally include stack trace in development mode only
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });
 };
 
