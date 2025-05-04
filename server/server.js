@@ -1,5 +1,7 @@
 
+// Load environment variables FIRST
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -19,7 +21,7 @@ configureCloudinary();
 const app = express();
 
 // Configure Passport
-configurePassport(passport);
+configurePassport(passport); // This should now have access to loaded env vars
 
 // Init Middleware
 app.use(cors({
@@ -34,7 +36,7 @@ app.get('/', (req, res) => res.send('API Running'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/items', require('./routes/itemRoutes'));
-// Add message routes later: app.use('/api/messages', require('./routes/messageRoutes')); // Example for future message routes
+app.use('/api/messages', require('./routes/messageRoutes')); // Example for future message routes
 
 // Error Handling Middleware (Should be last)
 app.use(errorHandler);

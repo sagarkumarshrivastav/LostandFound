@@ -3,9 +3,21 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 
 module.exports = function(passport) {
+  // Ensure environment variables are loaded before this runs
+  // console.log("Google Client ID:", process.env.GOOGLE_CLIENT_ID); // Temporary log for debugging
+  // console.log("Google Client Secret:", process.env.GOOGLE_CLIENT_SECRET); // Temporary log
+
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.error("Error: Missing Google Client ID or Secret in environment variables.");
+    // Optionally throw an error or exit if these are critical for startup
+    // throw new Error("Missing Google OAuth Credentials");
+    return; // Prevent Passport strategy initialization if keys are missing
+  }
+
+
   passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientID: process.env.GOOGLE_CLIENT_ID, // Use the correct env var name
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET, // Use the correct env var name
       callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback' // Adjust if server runs behind proxy
     },
     async (accessToken, refreshToken, profile, done) => {
