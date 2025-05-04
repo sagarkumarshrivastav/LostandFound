@@ -70,6 +70,9 @@ server.listen(PORT, () => {
   if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET is not defined in the environment variables!');
   }
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        console.error("Error: Missing Google Client ID or Secret in environment variables.");
+    }
   console.log(`Server started on port ${PORT}`);
 });
 
