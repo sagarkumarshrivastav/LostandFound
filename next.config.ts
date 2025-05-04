@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-       // Add pattern for Google User Profile Pictures
+       // Add pattern for Google User Profile Pictures (keep for Passport OAuth)
       {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
@@ -42,8 +42,9 @@ const nextConfig: NextConfig = {
 
     // Add environment variables needed by the frontend client
    env: {
+     // Backend API URL (used by frontend for requests)
      NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production'
-        ? process.env.API_URL // Use production API URL from environment
+        ? process.env.API_URL // Use production API URL from environment (set this in your deployment)
         : 'http://localhost:5000/api', // Default to local backend for dev
    }
 };

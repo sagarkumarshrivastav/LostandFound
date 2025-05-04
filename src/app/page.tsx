@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Button } from "@/components/ui/button";
-import type { Item, ItemType } from "@/types/item";
 import { ItemForm, ItemFormValues } from '@/components/item-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { PlusCircle, Search, FilePlus, ThumbsUp, ArrowRight, Loader2 } from 'lucide-react';
@@ -11,7 +10,8 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { motion } from 'framer-motion'; // Keep motion for other animations
+import { motion } from 'framer-motion'; // Import motion for animations
+
 
 export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,7 +19,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  // Handle form submission (keep this logic)
+  // Handle form submission (keep this logic, but adapt for API call)
   const handleFormSubmit = async (values: ItemFormValues) => {
      if (!user) {
        toast({ variant: "destructive", title: "Authentication Required", description: "Please log in to report an item." });
@@ -30,28 +30,33 @@ export default function Home() {
     setIsSubmitting(true);
     console.log("Submitting item:", values);
 
-    // Simulate API call for submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // TODO: Replace simulation with actual API call to the backend
+    // Use FormData if uploading image, otherwise JSON
+    try {
+       // Example using axios (assuming you have it installed and configured)
+       // const formData = new FormData();
+       // formData.append('type', values.type);
+       // ... append other fields
+       // if (values.image) formData.append('image', values.image);
+       //
+       // const config = { headers: { 'Content-Type': 'multipart/form-data', 'x-auth-token': token }};
+       // await axios.post(`${API_URL}/items`, formData, config);
 
-    const newItem: Item = {
-      id: `item-${Date.now()}`,
-      type: values.type as ItemType,
-      title: values.title,
-      description: values.description,
-      imageUrl: values.image ? `https://picsum.photos/400/300?random=${Date.now()}` : undefined,
-      location: values.location,
-      date: values.date,
-      userId: user.uid,
-      lat: undefined, // Add logic later if needed
-      lng: undefined,
-    };
+       // Simulate API call for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // TODO: Instead of adding locally, trigger a refetch or update a global state if items are managed elsewhere
-    console.log("New item created (locally):", newItem);
+      // Log locally for now - replace with API call success handling
+       console.log("Simulated item submission successful:", values);
 
-    setIsSubmitting(false);
-    setIsFormOpen(false); // Close the dialog on successful submission
-    toast({ title: "Item Reported", description: "Your item has been successfully reported." });
+      toast({ title: "Item Reported", description: "Your item has been successfully reported." });
+      setIsFormOpen(false); // Close the dialog on successful submission
+       // Optionally: Trigger a refetch of items on the main items page if needed
+    } catch (error: any) {
+        console.error("Error submitting item:", error);
+        toast({ variant: 'destructive', title: 'Submission Failed', description: error.response?.data?.msg || 'Could not report item.' });
+    } finally {
+       setIsSubmitting(false);
+    }
   };
 
   // Function to trigger the Report Item dialog

@@ -4,13 +4,16 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, CalendarDays } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns'; // Import parseISO
 
 interface ItemCardProps {
   item: Item;
 }
 
 export function ItemCard({ item }: ItemCardProps) {
+  // Parse the ISO string date before formatting
+  const formattedDate = item.dateLostOrFound ? format(parseISO(item.dateLostOrFound), 'PPP') : 'Date unknown';
+
   return (
     <Card className="w-full overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 group">
       <CardHeader className="p-0">
@@ -48,7 +51,7 @@ export function ItemCard({ item }: ItemCardProps) {
         </div>
         <div className="flex items-center text-sm text-muted-foreground">
           <CalendarDays className="mr-1 h-4 w-4 flex-shrink-0" />
-          <span>{format(item.date, 'PPP')}</span>
+          <span>{formattedDate}</span> {/* Use the formatted date */}
         </div>
       </CardContent>
       {/* CardFooter can be used for actions later */}

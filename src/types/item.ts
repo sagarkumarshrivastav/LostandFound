@@ -12,8 +12,8 @@ export interface Item {
   imageUrl?: string; // Optional image URL (from Cloudinary)
   imagePublicId?: string; // Cloudinary public ID
   location: string;
-  dateLostOrFound: string; // Date string (ISO format)
-  createdAt: string; // Date string (ISO format)
+  dateLostOrFound: string; // Date string (ISO format) - Changed from Date to string
+  createdAt: string; // Date string (ISO format) - Changed from Date to string
   // Optional coordinate fields if using GeoJSON later
   // lat?: number;
   // lng?: number;

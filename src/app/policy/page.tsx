@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>3. Data Storage and Security</h2>
        <p>
-          Your information, including Personal Data related to your account and item reports, is stored securely. We implement appropriate technical and organizational measures to protect your data against unauthorized access, alteration, disclosure, or destruction. We primarily use Firebase Authentication and Firestore (or potentially a local MongoDB instance during development) for data storage, which employ industry-standard security practices. However, no method of transmission over the Internet or method of electronic storage is 100% secure.
+          Your information, including Personal Data related to your account and item reports, is stored securely. We implement appropriate technical and organizational measures to protect your data against unauthorized access, alteration, disclosure, or destruction. We use MongoDB for database storage and industry-standard practices for securing user credentials and data. However, no method of transmission over the Internet or method of electronic storage is 100% secure.
        </p>
 
       <h2>4. Disclosure of Data</h2>
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>5. Third-Party Services</h2>
       <p>
-        We may employ third-party companies and individuals to facilitate our Service ("Service Providers"), provide the Service on our behalf, perform Service-related services, or assist us in analyzing how our Service is used. These third parties have access to your Personal Data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose. (e.g., Firebase for Authentication, potentially map services).
+        We may employ third-party companies and individuals to facilitate our Service ("Service Providers"), provide the Service on our behalf, perform Service-related services, or assist us in analyzing how our Service is used. These third parties have access to your Personal Data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose. (e.g., Cloudinary for image storage, Google for OAuth).
       </p>
 
       <h2>6. Your Data Protection Rights</h2>

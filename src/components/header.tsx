@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-import { ItemForm } from '@/components/item-form'; // Import ItemForm
+// Removed ItemForm import as reporting is not directly triggered from header anymore
 
 export function Header() {
   const { user, loading, logout, loginWithGoogle } = useAuth(); // Use new auth methods
@@ -36,8 +36,9 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  // Removed state related to report dialog in header
+  // const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  // const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -72,67 +73,11 @@ export function Header() {
         return '??';
     };
 
+   // Removed openReportDialog function - reporting initiated elsewhere
+   // const openReportDialog = () => { ... }
 
-   const openReportDialog = () => {
-       if (!user && !loading) {
-           toast({ variant: "destructive", title: "Login Required", description: "Please log in to report an item." });
-            // Optionally open login dialog
-            // setIsLoginOpen(true);
-       } else if (!loading) { // Only open if not loading and user exists
-          setIsReportDialogOpen(true);
-       }
-       // Implicitly does nothing if authLoading is true
-   }
-
-    // Handle item form submission from the header dialog
-    const handleReportSubmit = async (values: any) => { // Use 'any' for now, refine ItemFormValues later
-        if (!user) return; // Should not happen if dialog is opened correctly
-
-        setIsSubmittingReport(true);
-        const formData = new FormData();
-        Object.keys(values).forEach(key => {
-             if (key === 'date') {
-                formData.append(key, values[key].toISOString()); // Ensure date is ISO string
-            } else if (key === 'image' && values.image) {
-                formData.append(key, values.image); // Append the file object
-            } else if (values[key] !== undefined && values[key] !== null) {
-                formData.append(key, values[key]);
-            }
-        });
-
-         // Add user ID (although backend gets it from token, might be useful)
-         // formData.append('userId', user._id);
-
-        try {
-            // Replace with your actual API call
-            const response = await fetch('/api/items', { // Adjust API endpoint if needed
-                method: 'POST',
-                headers: {
-                    // Content-Type is set automatically by browser for FormData
-                    'x-auth-token': localStorage.getItem('token') || '', // Send token
-                },
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.msg || 'Failed to report item');
-            }
-
-            // const newItem = await response.json();
-            toast({ title: "Item Reported", description: "Your item has been posted." });
-            setIsReportDialogOpen(false); // Close dialog
-            // Optionally redirect or refresh item list
-             router.push('/items'); // Redirect to items page
-
-        } catch (error: any) {
-            console.error("Error submitting report:", error);
-            toast({ variant: 'destructive', title: 'Report Failed', description: error.message || 'Could not submit item.' });
-        } finally {
-            setIsSubmittingReport(false);
-        }
-    };
-
+    // Removed handleReportSubmit function
+    // const handleReportSubmit = async (values: any) => { ... };
 
 
   return (
@@ -149,8 +94,8 @@ export function Header() {
         <nav className="hidden items-center justify-center space-x-6 md:flex flex-grow">
          <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Home</Link>
          <Link href="/items" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Browse Items</Link>
-          {/* Report Item button */}
-           <Button variant="ghost" size="sm" onClick={openReportDialog} className="text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary px-3" disabled={loading}>
+          {/* Report Item button - now likely links to /items or triggers modal there */}
+           <Button variant="ghost" size="sm" onClick={() => router.push('/items#report')} className="text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary px-3" disabled={loading}>
              Report Item
            </Button>
         </nav>
@@ -261,21 +206,8 @@ export function Header() {
         </div>
       </div>
 
-       {/* Report Item Dialog (using ItemForm) */}
-       <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-          <DialogContent className="sm:max-w-[425px] md:max-w-lg">
-             <DialogHeader>
-                 <DialogTitle>Report a Lost or Found Item</DialogTitle>
-                 <DialogDescription>
-                     Fill in the details below. Be as specific as possible.
-                 </DialogDescription>
-             </DialogHeader>
-             <div className="py-4">
-                 {/* Pass onSubmit and isSubmitting state */}
-                 <ItemForm onSubmit={handleReportSubmit} isSubmitting={isSubmittingReport} />
-             </div>
-         </DialogContent>
-       </Dialog>
+       {/* Removed Report Item Dialog from header */}
+       {/* <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}> ... </Dialog> */}
     </header>
   );
 }

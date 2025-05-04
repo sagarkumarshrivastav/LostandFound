@@ -28,9 +28,11 @@ const setAuthToken = (token: string | null) => {
   if (token) {
     axios.defaults.headers.common['x-auth-token'] = token;
     localStorage.setItem('token', token);
+    // console.log("Auth Token Set:", token);
   } else {
     delete axios.defaults.headers.common['x-auth-token'];
     localStorage.removeItem('token');
+    // console.log("Auth Token Removed");
   }
 };
 
@@ -47,12 +49,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const loadUser = useCallback(async () => {
     const storedToken = localStorage.getItem('token');
     if (storedToken && !user) { // Only load if token exists and user isn't already set
-      // console.log("AuthProvider: Found token in storage, attempting to load user...");
+      console.log("AuthProvider: Found token in storage, attempting to load user...");
       setAuthToken(storedToken); // Set token for the upcoming API call
       setToken(storedToken);
       try {
         const res = await axios.get<User>(`${API_URL}/auth/me`);
-        // console.log("AuthProvider: User loaded successfully:", res.data);
+        console.log("AuthProvider: User loaded successfully:", res.data);
         setUser(res.data);
       } catch (err: any) {
         console.error("AuthProvider: Error loading user:", err.response?.data?.msg || err.message);
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
          if (loading) setLoading(false);
       }
     } else {
-        // console.log("AuthProvider: No token found or user already loaded.");
+        console.log("AuthProvider: No token found or user already loaded.");
         // No token found, stop loading
         if (loading) setLoading(false);
     }
@@ -72,7 +74,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
    // Load user on initial mount or when token might change externally
   useEffect(() => {
-    // console.log("AuthProvider: Initial mount effect - checking token/loading user.");
+    console.log("AuthProvider: Initial mount effect - checking token/loading user.");
     loadUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount to check initial token
@@ -164,7 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       loginWithGoogle,
       updateUserProfile,
       loadUser // Expose loadUser
-    }), [user, token, loading, loadUser]); // Include loadUser in dependencies
+    }), [user, token, loading, loadUser, login, signup, logout, loginWithGoogle, updateUserProfile]); // Include all functions in dependencies
 
   return (
     <AuthContext.Provider value={value}>
