@@ -1,4 +1,3 @@
-
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
@@ -54,9 +53,15 @@ exports.signup = async (req, res, next) => {
     };
 
     // Sign token
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('JWT_SECRET is not defined in the environment variables.');
+      return res.status(500).json({ success: false, msg: 'JWT_SECRET is not defined.' });
+    }
+
     jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' },
       (err, token) => {
         if (err) {
@@ -127,10 +132,15 @@ exports.login = async (req, res, next) => {
       },
     };
 
+     const jwtSecret = process.env.JWT_SECRET;
+     if (!jwtSecret) {
+       console.error('JWT_SECRET is not defined in the environment variables.');
+       return res.status(500).json({ success: false, msg: 'JWT_SECRET is not defined.' });
+     }
     // Sign token
     jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' },
       (err, token) => {
         if (err) {
@@ -176,10 +186,16 @@ exports.googleCallback = (req, res, next) => { // Added next for error handling
       },
     };
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('JWT_SECRET is not defined in the environment variables.');
+      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:9002'}/login?error=token_signing_failed`);
+    }
+
     // Sign token
     jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' },
       (err, token) => {
         if (err) {

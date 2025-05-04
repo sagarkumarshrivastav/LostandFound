@@ -1,4 +1,3 @@
-
 // Load environment variables FIRST
 // Explicitly specify the path relative to the current file
 require('dotenv').config({ path: require('path').resolve(__dirname, './.env') });
@@ -67,6 +66,11 @@ io.on('connection', (socket) => {
   // e.g., socket.on('sendMessage', (messageData) => { ... });
 });
 
-server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+server.listen(PORT, () => {
+  if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined in the environment variables!');
+  }
+  console.log(`Server started on port ${PORT}`);
+});
 
 module.exports = { io }; // Export io instance if needed elsewhere
