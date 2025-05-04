@@ -58,9 +58,10 @@ const errorHandler = (err, req, res, next) => {
     return next(err); // Pass error to default Express handler if headers sent
   }
 
+  // Always send JSON response
   res.status(statusCode).json({
     success: false, // Add a success flag for consistency
-    message: message,
+    msg: message, // Use 'msg' key consistent with controller responses
     // Optionally include stack trace in development mode only
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });

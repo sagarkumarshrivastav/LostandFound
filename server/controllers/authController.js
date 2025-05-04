@@ -11,22 +11,29 @@ exports.signup = async (req, res, next) => {
   try {
     // Basic validation
     if (!((email || phoneNumber) && password)) {
-      return res.status(400).json({ msg: 'Please provide email or phone number, and a password' });
+      return res.status(400).json({ success: false, msg: 'Please provide email or phone number, and a password' });
     }
     if (password.length < 6) {
-      return res.status(400).json({ msg: 'Password must be at least 6 characters' });
+      return res.status(400).json({ success: false, msg: 'Password must be at least 6 characters' });
     }
 
     // Check if user exists (by email or phone)
     let user;
     if (email) {
       user = await User.findOne({ email });
-      if (user) return res.status(400).json({ msg: 'User already exists with this email' });
+      if (user) return res.status(400).json({ success: false, msg: 'User already exists with this email' });
     }
     if (phoneNumber) {
-      user = await User.findOne({ phoneNumber });
-      if (user) return res.status(400).json({ msg: 'User already exists with this phone number' });
+      // If email wasn't provided or didn't find a user, check by phone
+      if (!user) {
+        user = await User.findOne({ phoneNumber });
+        if (user) return res.status(400).json({ success: false, msg: 'User already exists with this phone number' });
+      } else if (await User.findOne({ phoneNumber })) {
+         // If email user was found, still check if phone number is taken by someone else
+         return res.status(400).json({ success: false, msg: 'Phone number is already associated with another account' });
+      }
     }
+
 
     // Create new user instance (password will be hashed by pre-save hook)
     user = new User({
@@ -53,21 +60,24 @@ exports.signup = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' },
       (err, token) => {
         if (err) {
-            console.error('JWT Signing Error:', err); // Log JWT error
-            // Throwing the error here should be caught by the outer catch block
-            throw new Error('Token signing failed');
+            console.error('JWT Signing Error during signup:', err); // Log JWT error
+            // Pass a specific error to the handler
+             return next(new Error('Token signing failed during signup'));
         }
         console.log("Token signed successfully for user:", user.id); // Log token success
-        res.json({ token }); // Return token to client
+        res.status(201).json({ token }); // Use 201 Created status and return token
       }
     );
   } catch (err) {
-    // Log the detailed error on the server console
-    console.error('--- Signup Error Details ---');
+    // Log the detailed error on the server console before passing to handler
+    console.error('--- Signup Controller Error ---');
     console.error('Error Message:', err.message);
+    // Log specific mongoose validation errors if present
+    if (err.name === 'ValidationError') {
+      console.error('Validation Errors:', err.errors);
+    }
     console.error('Error Stack:', err.stack);
-    console.error('Request Body:', req.body); // Log request body (excluding password if sensitive)
-    console.error('--- End Signup Error Details ---');
+    console.error('--- End Signup Controller Error ---');
     // Pass the error to the central error handler middleware
     next(err);
   }
@@ -80,7 +90,7 @@ exports.login = async (req, res, next) => {
   try {
     // Basic validation
     if (!(email || phoneNumber) || !password) {
-      return res.status(400).json({ msg: 'Please provide email or phone number, and password' });
+      return res.status(400).json({ success: false, msg: 'Please provide email or phone number, and password' });
     }
 
     // Find user by email or phone
@@ -92,18 +102,22 @@ exports.login = async (req, res, next) => {
     }
 
     if (!user) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
+      console.log(`Login attempt failed: No user found for identifier: ${email || phoneNumber}`);
+      return res.status(400).json({ success: false, msg: 'Invalid Credentials' });
     }
 
-    // Check if user signed up with OAuth only
+    // Check if user signed up with OAuth only (no local password)
     if (!user.password) {
-      return res.status(400).json({ msg: 'Please log in using the method you originally signed up with (e.g., Google).' });
+        console.log(`Login attempt failed: User ${user._id} has no password (OAuth user?).`);
+        return res.status(400).json({ success: false, msg: 'Please log in using the method you originally signed up with (e.g., Google).' });
     }
+
 
     // Compare password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
+       console.log(`Login attempt failed: Password mismatch for user ${user._id}`);
+      return res.status(400).json({ success: false, msg: 'Invalid Credentials' });
     }
 
     // User matched, create JWT payload
@@ -121,13 +135,17 @@ exports.login = async (req, res, next) => {
       (err, token) => {
         if (err) {
            console.error('Login JWT Signing Error:', err);
-           throw new Error('Token signing failed during login');
+           // Pass a specific error to the handler
+           return next(new Error('Token signing failed during login'));
         }
         res.json({ token });
       }
     );
   } catch (err) {
-    console.error('Login error:', err.message);
+    console.error('--- Login Controller Error ---');
+    console.error('Error Message:', err.message);
+    console.error('Error Stack:', err.stack);
+    console.error('--- End Login Controller Error ---');
     next(err);
   }
 };
@@ -187,13 +205,13 @@ exports.getMe = async (req, res, next) => {
     // Ensure req.user exists before trying to access its id
      if (!req.user || !req.user.id) {
          console.error("Error in /me: req.user or req.user.id is undefined. Token might be invalid or middleware failed.");
-         return res.status(401).json({ msg: 'Authorization denied, user context not found.' });
+         return res.status(401).json({ success: false, msg: 'Authorization denied, user context not found.' });
      }
 
     const user = await User.findById(req.user.id).select('-password -googleId'); // Exclude sensitive fields
     if (!user) {
         // This case might happen if the user was deleted after the token was issued
-      return res.status(404).json({ msg: 'User not found' });
+      return res.status(404).json({ success: false, msg: 'User not found' });
     }
     res.json(user);
   } catch (err) {
