@@ -21,26 +21,12 @@ configureCloudinary();
 
 const app = express();
 
-// Configure Passport
-configurePassport(passport); // This should now have access to loaded env vars
-
 // Init Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:9002', // Allow frontend origin
   credentials: true
 }));
 app.use(express.json({ extended: false })); // Body parser for JSON
-app.use(passport.initialize()); // Initialize Passport
-
-// Define Routes
-app.get('/', (req, res) => res.send('API Running'));
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/items', require('./routes/itemRoutes'));
-app.use('/api/messages', require('./routes/messageRoutes')); // Example for future message routes
-
-// Error Handling Middleware (Should be last)
-app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
@@ -73,6 +59,22 @@ server.listen(PORT, () => {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
         console.error("Error: Missing Google Client ID or Secret in environment variables.");
     }
+
+  // Configure Passport
+  configurePassport(passport); // This should now have access to loaded env vars
+
+
+  // Define Routes
+  app.get('/', (req, res) => res.send('API Running'));
+  app.use('/api/auth', require('./routes/authRoutes'));
+  app.use('/api/users', require('./routes/userRoutes'));
+  app.use('/api/items', require('./routes/itemRoutes'));
+  app.use('/api/messages', require('./routes/messageRoutes')); // Example for future message routes
+
+  // Error Handling Middleware (Should be last)
+  app.use(errorHandler);
+
+
   console.log(`Server started on port ${PORT}`);
 });
 
