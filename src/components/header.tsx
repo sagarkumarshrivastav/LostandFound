@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -107,7 +106,7 @@ export function Header() {
             <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
                 aria-label="Toggle theme"
                 className="bg-transparent transition-transform transform hover:scale-110 duration-300 hover:bg-accent rounded-full"
             >
@@ -211,3 +210,4 @@ export function Header() {
     </header>
   );
 }
+
